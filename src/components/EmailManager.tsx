@@ -177,16 +177,16 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
 
   const handleEmailBodyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEmailBody(e.target.value)
-    // Auto-resize textarea
+    // Auto-resize textarea - no max height, let parent container handle scrolling
     e.target.style.height = 'auto'
-    e.target.style.height = `${Math.min(e.target.scrollHeight, 400)}px`
+    e.target.style.height = `${e.target.scrollHeight}px`
   }
 
   const handlePreviewContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPreviewContent(e.target.value)
-    // Auto-resize textarea
+    // Auto-resize textarea - no max height, let parent container handle scrolling
     e.target.style.height = 'auto'
-    e.target.style.height = `${Math.min(e.target.scrollHeight, 600)}px`
+    e.target.style.height = `${e.target.scrollHeight}px`
   }
 
   return (
@@ -310,11 +310,11 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
           />
           
           {/* Modal - Split View */}
-          <div className="relative w-full max-w-7xl max-h-[90vh] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex overflow-hidden animate-slide-up">
-            {/* Left Panel - Input Fields */}
-            <div className="w-1/2 border-r border-slate-200 dark:border-slate-700 flex flex-col bg-slate-50 dark:bg-slate-900/50">
-              {/* Header */}
-              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+          <div className="relative w-full max-w-7xl max-h-[90vh] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
+            {/* Headers Row - Fixed */}
+            <div className="flex flex-shrink-0 border-b border-slate-200 dark:border-slate-700">
+              {/* Left Header */}
+              <div className="w-1/2 px-6 py-4 border-r border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Compose</h3>
                 <div className="flex items-center justify-center h-9">
                   <button
@@ -327,69 +327,8 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                   </button>
                 </div>
               </div>
-
-              {/* Input Fields */}
-              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-                {/* To Field */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    To
-                  </label>
-                  <input
-                    type="email"
-                    defaultValue={selectedEmail.fromEmail}
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
-                    placeholder="Enter recipient email"
-                  />
-                </div>
-
-                {/* CC Field */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    CC
-                  </label>
-                  <input
-                    type="email"
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
-                    placeholder="Enter CC email addresses"
-                  />
-                </div>
-
-                {/* Summary Field */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Summary
-                  </label>
-                  <textarea
-                    rows={3}
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all resize-none"
-                    placeholder="Enter email summary"
-                    defaultValue="This email discusses the latest updates and important information regarding the project. Please review the details below and provide your feedback."
-                  />
-                </div>
-
-                {/* Email Body */}
-                <div className="flex-1 flex flex-col mt-6">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Email Body
-                  </label>
-                  <textarea
-                    ref={emailBodyRef}
-                    value={emailBody}
-                    onChange={handleEmailBodyChange}
-                    rows={12}
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all resize-none font-sans text-base leading-relaxed"
-                    placeholder="Enter email body content"
-                    style={{ minHeight: '300px', maxHeight: '400px' }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Right Panel - Preview */}
-            <div className="w-1/2 flex flex-col bg-white dark:bg-slate-800">
-              {/* Preview Header */}
-              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              {/* Right Header */}
+              <div className="w-1/2 px-6 py-4 flex items-center justify-between bg-white dark:bg-slate-800">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Reply Preview</h3>
                 <div className="flex items-center justify-center h-9">
                   {selectedEmail.category && (
@@ -399,28 +338,94 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                   )}
                 </div>
               </div>
+            </div>
 
-              {/* Email Preview Content */}
-              <div className="flex-1 overflow-y-auto px-6 py-6">
-                <div className="mb-2">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Reply Preview Content
-                  </label>
+            {/* Modal Content - Single Scrollable Area */}
+            <div className="flex-1 flex overflow-y-auto scrollbar-hide">
+              {/* Left Panel - Input Fields */}
+              <div className="w-1/2 border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                {/* Input Fields */}
+                <div className="px-6 py-6 space-y-6">
+                  {/* To Field */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      To
+                    </label>
+                    <input
+                      type="email"
+                      defaultValue={selectedEmail.fromEmail}
+                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
+                      placeholder="Enter recipient email"
+                    />
+                  </div>
+
+                  {/* CC Field */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      CC
+                    </label>
+                    <input
+                      type="email"
+                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
+                      placeholder="Enter CC email addresses"
+                    />
+                  </div>
+
+                  {/* Summary Field */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Summary
+                    </label>
+                    <textarea
+                      rows={3}
+                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all resize-none scrollbar-hide"
+                      placeholder="Enter email summary"
+                      defaultValue="This email discusses the latest updates and important information regarding the project. Please review the details below and provide your feedback."
+                    />
+                  </div>
+
+                  {/* Email Body */}
+                  <div className="flex flex-col mt-6">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Email Body
+                    </label>
+                    <textarea
+                      ref={emailBodyRef}
+                      value={emailBody}
+                      onChange={handleEmailBodyChange}
+                      rows={12}
+                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all resize-none font-sans text-base leading-relaxed scrollbar-hide"
+                      placeholder="Enter email body content"
+                      style={{ minHeight: '300px' }}
+                    />
+                  </div>
                 </div>
-                <textarea
-                  ref={previewContentRef}
-                  value={previewContent}
-                  onChange={handlePreviewContentChange}
-                  rows={20}
-                  className="w-full px-4 py-2.5 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 dark:focus:border-cyan-500 transition-all resize-y font-sans text-base leading-relaxed cursor-text"
-                  placeholder="Edit your reply preview content here..."
-                  style={{ minHeight: '400px', maxHeight: '600px' }}
-                />
               </div>
 
-              {/* Chat Input Section */}
-              <div className="border-t border-slate-200 dark:border-slate-700 px-6 py-4 bg-white dark:bg-slate-800 space-y-3">
-                {/* Attached Files Display */}
+              {/* Right Panel - Preview */}
+              <div className="w-1/2 flex flex-col bg-white dark:bg-slate-800">
+                {/* Email Preview Content */}
+                <div className="flex-1 px-6 py-6">
+                  <div className="mb-2">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Reply Preview Content
+                    </label>
+                  </div>
+                  <textarea
+                    ref={previewContentRef}
+                    value={previewContent}
+                    onChange={handlePreviewContentChange}
+                    rows={20}
+                    className="w-full px-4 py-2.5 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 dark:focus:border-cyan-500 transition-all resize-none font-sans text-base leading-relaxed cursor-text scrollbar-hide"
+                    placeholder="Edit your reply preview content here..."
+                    style={{ minHeight: '400px' }}
+                  />
+                </div>
+
+                {/* Chat Input Section - Fixed at Bottom */}
+                <div className="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
+                  <div className="px-6 py-4 space-y-3">
+                  {/* Attached Files Display */}
                 {attachedFiles.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-2">
                     {attachedFiles.map((file, index) => (
@@ -486,7 +491,7 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                       onChange={handleChatInputChange}
                       onKeyDown={handleChatKeyDown}
                       rows={1}
-                      className="flex-1 px-3 py-3.5 bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 resize-none focus:outline-none text-[15px] leading-relaxed"
+                      className="flex-1 px-3 py-3.5 bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 resize-none focus:outline-none text-[15px] leading-relaxed scrollbar-hide"
                       placeholder="Ask TOAI anything…"
                       style={{ minHeight: '52px', maxHeight: '200px' }}
                     />
@@ -515,11 +520,13 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                   </div>
                 </div>
 
-                {/* Save Draft Button */}
-                <div className="flex items-center justify-end gap-3">
-                  <button className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
-                    Save Draft
-                  </button>
+                    {/* Save Draft Button */}
+                    <div className="flex items-center justify-end gap-3">
+                      <button className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
+                        Save Draft
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
