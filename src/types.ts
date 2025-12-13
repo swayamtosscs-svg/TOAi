@@ -1,0 +1,23 @@
+export interface Message {
+  id: string
+  content: string
+  role: 'user' | 'assistant'
+  timestamp: Date
+}
+
+export interface ChatHistory {
+  id: string
+  title: string
+  timestamp: Date
+}
+
+export interface Email {
+  id: string
+  from: string
+  fromEmail: string
+  subject: string
+  preview: string
+  timestamp: Date
+  read: boolean
+  category?: string
+}
