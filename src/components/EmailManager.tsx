@@ -93,8 +93,12 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
   const [filter, setFilter] = useState<string>('all')
   const [chatInput, setChatInput] = useState<string>('')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
+  const [emailBody, setEmailBody] = useState<string>('')
+  const [previewContent, setPreviewContent] = useState<string>('')
   const chatTextareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const emailBodyRef = useRef<HTMLTextAreaElement>(null)
+  const previewContentRef = useRef<HTMLTextAreaElement>(null)
 
   const filteredEmails = filter === 'all' 
     ? emails 
@@ -160,6 +164,31 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
     setAttachedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
+  // Initialize email body when email is selected
+  const handleEmailSelect = (email: Email) => {
+    setSelectedEmail(email)
+    // Initialize email body with preview and Lorem ipsum content
+    const initialBody = `${email.preview}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nSed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.`
+    setEmailBody(initialBody)
+    // Initialize preview content with preview and Lorem ipsum content
+    const initialPreview = `${email.preview}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nSed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.`
+    setPreviewContent(initialPreview)
+  }
+
+  const handleEmailBodyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEmailBody(e.target.value)
+    // Auto-resize textarea
+    e.target.style.height = 'auto'
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 400)}px`
+  }
+
+  const handlePreviewContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPreviewContent(e.target.value)
+    // Auto-resize textarea
+    e.target.style.height = 'auto'
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 600)}px`
+  }
+
   return (
     <>
       {/* Main Email Manager View */}
@@ -210,7 +239,7 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
             {filteredEmails.map((email) => (
               <div
                 key={email.id}
-                onClick={() => setSelectedEmail(email)}
+                onClick={() => handleEmailSelect(email)}
                 className={`bg-white dark:bg-slate-800 rounded-xl p-5 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.02] border-2 ${
                   email.read
                     ? 'border-transparent'
@@ -287,14 +316,16 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
               {/* Header */}
               <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Compose</h3>
-                <button
-                  onClick={() => setSelectedEmail(null)}
-                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className="flex items-center justify-center h-9">
+                  <button
+                    onClick={() => setSelectedEmail(null)}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center justify-center"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* Input Fields */}
@@ -324,22 +355,33 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                   />
                 </div>
 
+                {/* Summary Field */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Summary
+                  </label>
+                  <textarea
+                    rows={3}
+                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all resize-none"
+                    placeholder="Enter email summary"
+                    defaultValue="This email discusses the latest updates and important information regarding the project. Please review the details below and provide your feedback."
+                  />
+                </div>
+
                 {/* Email Body */}
                 <div className="flex-1 flex flex-col mt-6">
-                  <div className="flex-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 p-6 overflow-y-auto">
-                    <div className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap text-base">
-                      <p className="mb-4">{selectedEmail.preview}</p>
-                      <p className="mb-4 text-slate-600 dark:text-slate-400">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                      </p>
-                      <p className="mb-4 text-slate-600 dark:text-slate-400">
-                        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                      </p>
-                      <p className="text-slate-600 dark:text-slate-400">
-                        Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-                      </p>
-                    </div>
-                  </div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Email Body
+                  </label>
+                  <textarea
+                    ref={emailBodyRef}
+                    value={emailBody}
+                    onChange={handleEmailBodyChange}
+                    rows={12}
+                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all resize-none font-sans text-base leading-relaxed"
+                    placeholder="Enter email body content"
+                    style={{ minHeight: '300px', maxHeight: '400px' }}
+                  />
                 </div>
               </div>
             </div>
@@ -349,29 +391,31 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
               {/* Preview Header */}
               <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Reply Preview</h3>
-                {selectedEmail.category && (
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-teal-100 to-cyan-100 dark:from-teal-900/30 dark:to-cyan-900/30 text-teal-700 dark:text-teal-300">
-                    {selectedEmail.category}
-                  </span>
-                )}
+                <div className="flex items-center justify-center h-9">
+                  {selectedEmail.category && (
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-teal-100 to-cyan-100 dark:from-teal-900/30 dark:to-cyan-900/30 text-teal-700 dark:text-teal-300 flex items-center">
+                      {selectedEmail.category}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Email Preview Content */}
               <div className="flex-1 overflow-y-auto px-6 py-6">
-                <div className="prose dark:prose-invert max-w-none">
-                  <div className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap space-y-4">
-                    <p>{selectedEmail.preview}</p>
-                    <p>
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                    </p>
-                    <p>
-                      Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                    </p>
-                    <p>
-                      Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-                    </p>
-                  </div>
+                <div className="mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Reply Preview Content
+                  </label>
                 </div>
+                <textarea
+                  ref={previewContentRef}
+                  value={previewContent}
+                  onChange={handlePreviewContentChange}
+                  rows={20}
+                  className="w-full px-4 py-2.5 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 dark:focus:border-cyan-500 transition-all resize-y font-sans text-base leading-relaxed cursor-text"
+                  placeholder="Edit your reply preview content here..."
+                  style={{ minHeight: '400px', maxHeight: '600px' }}
+                />
               </div>
 
               {/* Chat Input Section */}
@@ -401,8 +445,8 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                   </div>
                 )}
 
-                {/* Chat Input with Attach and Save Prompt Buttons */}
-                <div className="relative flex items-end gap-3">
+                {/* Chat Input with all buttons inside */}
+                <div className="relative">
                   {/* Hidden File Input */}
                   <input
                     ref={fileInputRef}
@@ -412,71 +456,69 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                     onChange={handleFileChange}
                   />
 
-                  {/* Attachment Button */}
-                  <button
-                    onClick={handleAttachClick}
-                    className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0"
-                    title="Attach file"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                    </svg>
-                  </button>
+                  {/* Input Area with all buttons inside */}
+                  <div className="relative flex items-center rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-soft dark:shadow-soft-dark focus-within:ring-2 focus-within:ring-teal-500/50 focus-within:border-teal-500 dark:focus-within:ring-cyan-500/50 dark:focus-within:border-cyan-500 transition-all">
+                    {/* Save Prompt Button */}
+                    <button
+                      className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
+                      title="Save Prompt"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                    </button>
 
-                  {/* Save Prompt Button */}
-                  <button
-                    className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0"
-                    title="Save Prompt"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                  </button>
+                    {/* Attachment Button */}
+                    <button
+                      onClick={handleAttachClick}
+                      className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
+                      title="Attach file"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                      </svg>
+                    </button>
 
-                  {/* Input Area */}
-                  <div className="flex-1 relative">
+                    {/* Textarea */}
                     <textarea
                       ref={chatTextareaRef}
                       value={chatInput}
                       onChange={handleChatInputChange}
                       onKeyDown={handleChatKeyDown}
                       rows={1}
-                      className="w-full px-5 py-3.5 pr-12 rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 dark:focus:ring-cyan-500/50 dark:focus:border-cyan-500 transition-all shadow-soft dark:shadow-soft-dark text-[15px] leading-relaxed"
+                      className="flex-1 px-3 py-3.5 bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 resize-none focus:outline-none text-[15px] leading-relaxed"
                       placeholder="Ask TOAI anything…"
                       style={{ minHeight: '52px', maxHeight: '200px' }}
                     />
                     
-                    {/* Voice Button (inside input) */}
+                    {/* Voice Button */}
                     <button
-                      className="absolute right-3 bottom-3 p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                      className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
                       title="Voice input"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                       </svg>
                     </button>
+
+                    {/* Send Button */}
+                    <button
+                      onClick={handleChatSend}
+                      disabled={!chatInput.trim()}
+                      className="p-3 rounded-xl bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex-shrink-0 m-1"
+                      title="Send message"
+                    >
+                      <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                    </button>
                   </div>
-                  
-                  {/* Send Button */}
-                  <button
-                    onClick={handleChatSend}
-                    disabled={!chatInput.trim()}
-                    className="p-3 rounded-xl bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex-shrink-0"
-                    title="Send message"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                  </button>
                 </div>
 
-                {/* Save and Save Draft Buttons */}
+                {/* Save Draft Button */}
                 <div className="flex items-center justify-end gap-3">
-                  <button className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
-                    Save Draft
-                  </button>
                   <button className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
-                    Send
+                    Save Draft
                   </button>
                 </div>
               </div>
