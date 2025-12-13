@@ -471,7 +471,7 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                 </div>
 
                 {/* Save and Save Draft Buttons */}
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-end gap-3">
                   <button className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
                     Save Draft
                   </button>
