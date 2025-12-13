@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
 import ChatInterface from './components/ChatInterface'
 import EmailManager from './components/EmailManager'
+import SavedPrompts from './components/SavedPrompts'
 import { Message } from './types'
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [showEmailManager, setShowEmailManager] = useState(false)
+  const [showSavedPrompts, setShowSavedPrompts] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
     if (saved !== null) {
@@ -63,12 +65,22 @@ function App() {
         onNewChat={() => {
           setMessages([])
           setShowEmailManager(false)
+          setShowSavedPrompts(false)
         }}
         onToggleDarkMode={toggleDarkMode}
         isDarkMode={isDarkMode}
-        onOpenEmail={() => setShowEmailManager(true)}
+        onOpenEmail={() => {
+          setShowEmailManager(true)
+          setShowSavedPrompts(false)
+        }}
+        onOpenSavedPrompts={() => {
+          setShowSavedPrompts(true)
+          setShowEmailManager(false)
+        }}
       />
-      {showEmailManager ? (
+      {showSavedPrompts ? (
+        <SavedPrompts onClose={() => setShowSavedPrompts(false)} />
+      ) : showEmailManager ? (
         <EmailManager onClose={() => setShowEmailManager(false)} />
       ) : (
         <ChatInterface 
