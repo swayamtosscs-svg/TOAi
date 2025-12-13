@@ -92,7 +92,9 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   const [filter, setFilter] = useState<string>('all')
   const [chatInput, setChatInput] = useState<string>('')
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const chatTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const filteredEmails = filter === 'all' 
     ? emails 
@@ -136,6 +138,26 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
       e.preventDefault()
       handleChatSend()
     }
+  }
+
+  const handleAttachClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      const fileArray = Array.from(files)
+      setAttachedFiles(prev => [...prev, ...fileArray])
+    }
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
   return (
@@ -302,50 +324,19 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                   />
                 </div>
 
-                {/* Subject Field */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Subject
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue={`Re: ${selectedEmail.subject}`}
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
-                    placeholder="Enter email subject"
-                  />
-                </div>
-
-                {/* Email Summary */}
+                {/* Email Body */}
                 <div className="flex-1 flex flex-col mt-6">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                    Email Summary
-                  </label>
-                  <div className="flex-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 p-4 overflow-y-auto">
-                    <div className="mb-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                          {selectedEmail.from.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
-                            {selectedEmail.from}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {selectedEmail.fromEmail}
-                          </p>
-                        </div>
-                      </div>
-                      <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                        {selectedEmail.subject}
-                      </h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                        {formatDate(selectedEmail.timestamp)}
-                      </p>
-                    </div>
-                    <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                      <p className="mb-3">{selectedEmail.preview}</p>
-                      <p className="text-slate-600 dark:text-slate-400">
+                  <div className="flex-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 p-6 overflow-y-auto">
+                    <div className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap text-base">
+                      <p className="mb-4">{selectedEmail.preview}</p>
+                      <p className="mb-4 text-slate-600 dark:text-slate-400">
                         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                      </p>
+                      <p className="mb-4 text-slate-600 dark:text-slate-400">
+                        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                      </p>
+                      <p className="text-slate-600 dark:text-slate-400">
+                        Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
                       </p>
                     </div>
                   </div>
@@ -367,30 +358,6 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
 
               {/* Email Preview Content */}
               <div className="flex-1 overflow-y-auto px-6 py-6">
-                <div className="mb-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
-                      {selectedEmail.from.charAt(0)}
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                        {selectedEmail.from}
-                      </h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {selectedEmail.fromEmail}
-                      </p>
-                    </div>
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
-                    {selectedEmail.subject}
-                  </h2>
-                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-4">
-                    <span>To: you@example.com</span>
-                    <span>•</span>
-                    <span>{formatDate(selectedEmail.timestamp)}</span>
-                  </div>
-                </div>
-
                 <div className="prose dark:prose-invert max-w-none">
                   <div className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap space-y-4">
                     <p>{selectedEmail.preview}</p>
@@ -409,38 +376,107 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
 
               {/* Chat Input Section */}
               <div className="border-t border-slate-200 dark:border-slate-700 px-6 py-4 bg-white dark:bg-slate-800 space-y-3">
-                {/* Saved Prompts Button - Separate */}
-                <div>
-                  <button className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* Attached Files Display */}
+                {attachedFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {attachedFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm"
+                      >
+                        <span className="text-slate-700 dark:text-slate-300 truncate max-w-[150px]">
+                          {file.name}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveFile(index)}
+                          className="text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                          title="Remove file"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Chat Input with Attach and Save Prompt Buttons */}
+                <div className="relative flex items-end gap-3">
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+
+                  {/* Attachment Button */}
+                  <button
+                    onClick={handleAttachClick}
+                    className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0"
+                    title="Attach file"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                  </button>
+
+                  {/* Save Prompt Button */}
+                  <button
+                    className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0"
+                    title="Save Prompt"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                     </svg>
-                    Saved Prompts
                   </button>
-                </div>
-                
-                {/* Chat Input - Separate */}
-                <div className="relative flex items-end gap-3">
-                  <textarea
-                    ref={chatTextareaRef}
-                    value={chatInput}
-                    onChange={handleChatInputChange}
-                    onKeyDown={handleChatKeyDown}
-                    rows={1}
-                    className="w-full px-4 pr-12 py-3.5 rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 dark:focus:ring-cyan-500/50 dark:focus:border-cyan-500 transition-all shadow-soft dark:shadow-soft-dark text-[15px] leading-relaxed"
-                    placeholder="Ask TOAI anything…"
-                    style={{ minHeight: '52px', maxHeight: '200px' }}
-                  />
+
+                  {/* Input Area */}
+                  <div className="flex-1 relative">
+                    <textarea
+                      ref={chatTextareaRef}
+                      value={chatInput}
+                      onChange={handleChatInputChange}
+                      onKeyDown={handleChatKeyDown}
+                      rows={1}
+                      className="w-full px-5 py-3.5 pr-12 rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 dark:focus:ring-cyan-500/50 dark:focus:border-cyan-500 transition-all shadow-soft dark:shadow-soft-dark text-[15px] leading-relaxed"
+                      placeholder="Ask TOAI anything…"
+                      style={{ minHeight: '52px', maxHeight: '200px' }}
+                    />
+                    
+                    {/* Voice Button (inside input) */}
+                    <button
+                      className="absolute right-3 bottom-3 p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                      title="Voice input"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                    </button>
+                  </div>
                   
                   {/* Send Button */}
                   <button
                     onClick={handleChatSend}
                     disabled={!chatInput.trim()}
                     className="p-3 rounded-xl bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex-shrink-0"
+                    title="Send message"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
+                  </button>
+                </div>
+
+                {/* Save and Save Draft Buttons */}
+                <div className="flex items-center justify-end gap-3">
+                  <button className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
+                    Save Draft
+                  </button>
+                  <button className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
+                    Send
                   </button>
                 </div>
               </div>
