@@ -587,64 +587,68 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
             <div className="flex-1 flex flex-col lg:flex-row">
               {/* Left Panel - Input Fields */}
               <div className="w-full lg:w-1/2 border-b lg:border-b-0 border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-col">
-                {/* Input Fields */}
-                <div className="px-4 sm:px-6 py-6 space-y-6 flex-1 flex flex-col overflow-hidden">
-                  {/* To Field */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      To
-                    </label>
-                    <input
-                      type="email"
-                      defaultValue={selectedEmail.fromEmail}
-                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
-                      placeholder="Enter recipient email"
-                    />
+                {/* Input Fields + Email Body */}
+                <div className="px-4 sm:px-6 py-6 flex-1 flex flex-col overflow-hidden">
+                  <div className="space-y-6">
+                    {/* To Field */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        To
+                      </label>
+                      <input
+                        type="email"
+                        defaultValue={selectedEmail.fromEmail}
+                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
+                        placeholder="Enter recipient email"
+                      />
+                    </div>
+                    
+                    {/* CC Field */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        CC
+                      </label>
+                      <input
+                        type="email"
+                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
+                        placeholder="Enter CC email addresses"
+                      />
+                    </div>
+
+                    {/* Summary Field */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Summary
+                      </label>
+                      <textarea
+                        rows={3}
+                        readOnly
+                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 cursor-not-allowed resize-none scrollbar-hide"
+                        placeholder="Enter email summary"
+                        defaultValue="This email discusses the latest updates and important information regarding the project. Please review the details below and provide your feedback."
+                      />
+                    </div>
                   </div>
 
-                  {/* CC Field */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      CC
-                    </label>
-                    <input
-                      type="email"
-                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all"
-                      placeholder="Enter CC email addresses"
-                    />
-                  </div>
-
-                  {/* Summary Field */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Summary
-                    </label>
-                    <textarea
-                      rows={3}
-                      readOnly
-                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 cursor-not-allowed resize-none scrollbar-hide"
-                      placeholder="Enter email summary"
-                      defaultValue="This email discusses the latest updates and important information regarding the project. Please review the details below and provide your feedback."
-                    />
-                  </div>
-
-                  
-                  {/* Email Body */}
-                  <div className="flex flex-col mt-6">
+                  {/* Email Body - aligned with right side chat input area */}
+                  <div className="flex flex-col mt-6 flex-1">
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       Email Body
                     </label>
-                    <textarea
-                      ref={emailBodyRef}
-                      value={emailBody}
-                      readOnly
-                      rows={12}
-                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 cursor-not-allowed resize-none font-sans text-base leading-relaxed scrollbar-hide"
-                      placeholder="Enter email body content"
-                      style={{ minHeight: '300px' }}
-                    />
+                    <div className="flex-1 min-h-[260px]">
+                      <textarea
+                        ref={emailBodyRef}
+                        value={emailBody}
+                        readOnly
+                        className="w-full h-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 cursor-not-allowed resize-none font-sans text-base leading-relaxed scrollbar-hide"
+                        placeholder="Enter email body content"
+                      />
+                    </div>
                   </div>
                 </div>
+
+                {/* Spacer to fine-tune alignment of Email Body bottom with chat input on the right */}
+                <div className="h-10 flex-shrink-0" />
               </div>
 
               {/* Right Panel - Preview */}

@@ -13,6 +13,7 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
   const [isTyping, setIsTyping] = useState(false)
   const [activeIcons, setActiveIcons] = useState<Record<string, boolean>>({})
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
+  const [showGoogleModal, setShowGoogleModal] = useState(false)
   const [whatsAppStage, setWhatsAppStage] = useState<'scan' | 'groups'>('scan')
   const [selectedGroups, setSelectedGroups] = useState<string[]>([])
   const [groupSearch, setGroupSearch] = useState('')
@@ -20,8 +21,8 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
 
   const integrationIcons = [
     { id: 'whatsapp', label: 'WhatsApp', offSrc: '/whatsapp.png', onSrc: '/whatsapp-on.png' },
-    { id: 'email', label: 'Email', offSrc: '/email.png', onSrc: '/email-on.png' },
-    { id: 'drive', label: 'Google Drive', offSrc: '/drive.png', onSrc: '/drive-on.png' },
+    // Google icon will be drawn as a custom "G" (no image needed)
+    { id: 'google', label: 'Google', offSrc: '', onSrc: '' },
     { id: 'mysql', label: 'MySQL', offSrc: '/mysql.png', onSrc: '/mysql-on.png' },
     { id: 'oracle', label: 'Oracle', offSrc: '/oracle.png', onSrc: '/oracle-on.png' },
   ] as const
@@ -53,6 +54,15 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
       return
     }
 
+    if (id === 'google') {
+      setShowGoogleModal(true)
+      setActiveIcons((prev) => ({
+        ...prev,
+        [id]: true,
+      }))
+      return
+    }
+
     setActiveIcons((prev) => ({
       ...prev,
       [id]: !prev[id],
@@ -66,6 +76,14 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
     setActiveIcons((prev) => ({
       ...prev,
       whatsapp: false,
+    }))
+  }
+
+  const handleCloseGoogle = () => {
+    setShowGoogleModal(false)
+    setActiveIcons((prev) => ({
+      ...prev,
+      google: false,
     }))
   }
 
@@ -113,6 +131,8 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
     handleCloseWhatsApp()
   }
 
+  const isWelcome = messages.length === 0
+
   return (
     <div className="flex-1 flex flex-col h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Header */}
@@ -129,11 +149,23 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
                   aria-label={icon.label}
                   aria-pressed={isActive}
                 >
-                  <img
-                    src={isActive ? icon.onSrc : icon.offSrc}
-                    alt={icon.label}
-                    className="w-[18px] h-[18px]"
-                  />
+                  {icon.id === 'google' ? (
+                    <div
+                      className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[11px] font-semibold ${
+                        isActive
+                          ? 'bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white'
+                          : 'border border-slate-400/70 dark:border-slate-500/80 text-slate-400 dark:text-slate-300'
+                      }`}
+                    >
+                      G
+                    </div>
+                  ) : (
+                    <img
+                      src={isActive ? icon.onSrc : icon.offSrc}
+                      alt={icon.label}
+                      className="w-[18px] h-[18px]"
+                    />
+                  )}
                 </button>
                 <div className="pointer-events-none absolute top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 text-white text-[10px] px-2 py-1 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-1 transition-all duration-150 shadow-lg">
                   {icon.label}
@@ -142,19 +174,35 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
             )
           })}
         </div>
-        <button
-          className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center translate-y-1"
-          aria-label="More"
-        >
-          <img src="/Frame 14.png" alt="More" className="w-full h-full rounded-full object-contain" />
-        </button>
+        <div className="flex items-center gap-3 translate-y-1">
+          {/* Google-style apps grid icon */}
+          <button
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-slate-400/50 dark:border-slate-500/60 flex items-center justify-center hover:bg-slate-100/60 dark:hover:bg-slate-700/80 transition-colors"
+            aria-label="Google apps"
+          >
+            <div className="grid grid-cols-3 gap-[2px]">
+              {Array.from({ length: 9 }).map((_, index) => (
+                <span
+                  // eslint-disable-next-line react/no-array-index-key
+                  key={index}
+                  className="w-1.5 h-1.5 rounded-[2px] bg-slate-400 dark:bg-slate-300"
+                />
+              ))}
+            </div>
+          </button>
+
+          {/* Profile avatar - gradient U icon */}
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 flex items-center justify-center text-xs sm:text-sm font-semibold text-white shadow-soft">
+            U
+          </div>
+        </div>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-6">
         <div className="max-w-3xl sm:max-w-4xl mx-auto space-y-6 flex flex-col min-h-full">
-          {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center flex-1 text-center py-8 sm:py-12">
+          {isWelcome && (
+            <div className="flex flex-col items-center justify-center flex-1 text-center py-8 sm:py-12 gap-4">
               <div className="mb-2">
                 <div className="w-20 h-20 mx-auto mb-1">
                   <img
@@ -170,6 +218,12 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
               <p className="text-slate-600 dark:text-slate-400 max-w-md px-4 sm:px-0">
                 Start a conversation by asking me anything. I'm here to help with your questions, creative projects, and more.
               </p>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Hi, <span className="font-semibold">User</span> 👋
+              </p>
+              <div className="w-full mt-2">
+                <ChatInput onSend={handleSend} />
+              </div>
             </div>
           )}
 
@@ -182,12 +236,14 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="border-t border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-4">
-        <div className="max-w-3xl sm:max-w-4xl mx-auto">
-          <ChatInput onSend={handleSend} />
+      {/* Bottom Input Area when conversation has started */}
+      {!isWelcome && (
+        <div className="border-t border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-4">
+          <div className="max-w-3xl sm:max-w-4xl mx-auto">
+            <ChatInput onSend={handleSend} />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* WhatsApp Integration Modal */}
       {showWhatsAppModal && (
@@ -386,6 +442,126 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Google (Email / Drive) Integration Modal */}
+      {showGoogleModal && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <button
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={handleCloseGoogle}
+            aria-label="Close Google connection"
+          />
+
+          {/* Modal */}
+          <div className="relative z-50 w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-sky-500/10 flex items-center justify-center">
+                  <img
+                    src="/drive-on.png"
+                    alt="Google"
+                    className="w-5 h-5"
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                    Connect Google
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Choose what you want to connect with TOAI.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseGoogle}
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors"
+                aria-label="Close"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
+              <p className="text-sm text-slate-700 dark:text-slate-200">
+                Select a service below. This is a UI preview – plug in your own Google APIs to complete the flow.
+              </p>
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-500 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-sky-500/10 flex items-center justify-center">
+                      <img
+                        src="/drive-on.png"
+                        alt="Google Drive"
+                        className="w-5 h-5"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        Connect Google Drive
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Sync files and documents from your Drive.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-semibold text-sky-600 dark:text-sky-400">
+                    Connect
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-500 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                      <img
+                        src="/email-on.png"
+                        alt="Email"
+                        className="w-5 h-5"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        Connect Email
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Link your Gmail inbox for smart replies.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-semibold text-sky-600 dark:text-sky-400">
+                    Connect
+                  </span>
+                </button>
+              </div>
+
+              <div className="pt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                No data is actually sent – this is a front‑end preview only.
+              </div>
             </div>
           </div>
         </div>

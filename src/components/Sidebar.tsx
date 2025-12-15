@@ -20,8 +20,8 @@ const Sidebar = ({ onNewChat, onToggleDarkMode, isDarkMode, onOpenEmail, onOpenS
 
   return (
     <div className="w-full md:w-72 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border-r border-slate-200 dark:border-slate-700 flex flex-col h-full">
-      {/* Logo Section */}
-      <div className="px-6 pt-4 pb-2 border-b border-slate-200 dark:border-slate-700">
+      {/* Logo Section (aligned with main header border) */}
+      <div className="px-5  border-b border-slate-200 dark:border-slate-700 flex items-center justify-center">
         <Logo size="default" />
       </div>
 
@@ -59,7 +59,8 @@ const Sidebar = ({ onNewChat, onToggleDarkMode, isDarkMode, onOpenEmail, onOpenS
         
         {/* Submenu */}
         {isExploreOpen && (
-          <div className="mt-1 ml-8 space-y-1 animate-slide-up">
+          // Left margin further reduced so items align tightly under the "O" of "TOAIs"
+          <div className="mt-1 ml-2 space-y-1 animate-slide-up">
             <button 
               onClick={onOpenSavedPrompts}
               className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors duration-150 flex items-center gap-2"
@@ -83,7 +84,7 @@ const Sidebar = ({ onNewChat, onToggleDarkMode, isDarkMode, onOpenEmail, onOpenS
       </div>
 
       {/* Chat History */}
-      <div className="flex-1 overflow-y-auto px-4">
+      <div className="flex-1 overflow-y-auto px-4 scrollbar-thin">
         <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 px-2">
           Recent
         </div>
