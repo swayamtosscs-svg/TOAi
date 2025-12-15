@@ -11,8 +11,20 @@ interface ChatInterfaceProps {
 
 const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
   const [isTyping, setIsTyping] = useState(false)
-  const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false)
+  const [activeIcons, setActiveIcons] = useState<Record<string, boolean>>({})
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
+  const [whatsAppStage, setWhatsAppStage] = useState<'scan' | 'groups'>('scan')
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([])
+  const [groupSearch, setGroupSearch] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const integrationIcons = [
+    { id: 'whatsapp', label: 'WhatsApp', offSrc: '/whatsapp.png', onSrc: '/whatsapp-on.png' },
+    { id: 'email', label: 'Email', offSrc: '/email.png', onSrc: '/email-on.png' },
+    { id: 'drive', label: 'Drive', offSrc: '/drive.png', onSrc: '/drive-on.png' },
+    { id: 'mysql', label: 'MySQL', offSrc: '/mysql.png', onSrc: '/mysql-on.png' },
+    { id: 'oracle', label: 'Oracle', offSrc: '/oracle.png', onSrc: '/oracle-on.png' },
+  ] as const
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -30,78 +42,128 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
     }
   }
 
-  const handleWhatsAppClick = () => {
-    setIsWhatsAppConnected(!isWhatsAppConnected)
+  const handleIconClick = (id: string) => {
+    if (id === 'whatsapp') {
+      setShowWhatsAppModal(true)
+      setWhatsAppStage('scan')
+      setActiveIcons((prev) => ({
+        ...prev,
+        [id]: true,
+      }))
+      return
+    }
+
+    setActiveIcons((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }))
+  }
+
+  const handleCloseWhatsApp = () => {
+    setShowWhatsAppModal(false)
+    setWhatsAppStage('scan')
+    setSelectedGroups([])
+    setActiveIcons((prev) => ({
+      ...prev,
+      whatsapp: false,
+    }))
+  }
+
+  const whatsAppGroups = [
+    'Sales Updates',
+    'Support Escalations',
+    'Management Daily',
+    'Project Alpha Squad',
+    'Vendors & Partners',
+  ]
+
+  const toggleGroupSelection = (group: string) => {
+    setSelectedGroups((prev) =>
+      prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group],
+    )
+  }
+
+  const filteredWhatsAppGroups = whatsAppGroups.filter((group) =>
+    group.toLowerCase().includes(groupSearch.toLowerCase().trim()),
+  )
+
+  const allSelected =
+    filteredWhatsAppGroups.length > 0 &&
+    filteredWhatsAppGroups.every((group) => selectedGroups.includes(group))
+
+  const handleToggleSelectAll = () => {
+    setSelectedGroups((prev) => {
+      const visible = filteredWhatsAppGroups
+      const allVisibleSelected = visible.every((g) => prev.includes(g))
+      if (allVisibleSelected) {
+        // Unselect only visible groups
+        return prev.filter((g) => !visible.includes(g))
+      }
+      // Add all visible groups to selection
+      const next = new Set(prev)
+      visible.forEach((g) => next.add(g))
+      return Array.from(next)
+    })
+  }
+
+  const handleConnectSelected = () => {
+    if (!selectedGroups.length) return
+    // Placeholder for actual connect logic
+    console.log('Connecting groups:', selectedGroups)
+    handleCloseWhatsApp()
   }
 
   return (
     <div className="flex-1 flex flex-col h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Header */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gradient-toai">TOAI</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Your intelligent AI assistant</p>
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="w-10 hidden sm:block" aria-hidden />
+        <div className="flex items-center gap-3 sm:gap-4 text-slate-500 dark:text-slate-300 flex-wrap justify-center sm:justify-start">
+          {integrationIcons.map((icon) => {
+            const isActive = !!activeIcons[icon.id]
+            return (
+              <button
+                key={icon.id}
+                onClick={() => handleIconClick(icon.id)}
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                aria-label={icon.label}
+                aria-pressed={isActive}
+              >
+                <img
+                  src={isActive ? icon.onSrc : icon.offSrc}
+                  alt={icon.label}
+                  className="w-[18px] h-[18px]"
+                />
+              </button>
+            )
+          })}
         </div>
-        <div className="flex items-center gap-3">
-          {/* Connect WhatsApp Button */}
-          <button 
-            onClick={handleWhatsAppClick}
-            className={`px-4 py-2.5 rounded-full border font-medium transition-all duration-200 flex items-center gap-2 ${
-              isWhatsAppConnected
-                ? 'bg-[#25D366] border-[#25D366] text-white hover:bg-[#20BA5A]'
-                : 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-            }`}
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-            </svg>
-            <span>{isWhatsAppConnected ? 'Connected' : 'Connect WhatsApp'}</span>
-          </button>
-          
-          {/* Google Drive Button */}
-          <button className="px-4 py-2.5 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 flex items-center gap-2">
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-              <path d="M7.71 2.5L1.15 13l2.56 4.43L10.27 6.93 7.71 2.5z" fill="#0066DA"/>
-              <path d="M9.12 2.5L2.56 13l2.56 4.43L11.68 6.93 9.12 2.5z" fill="#00AC47"/>
-              <path d="M16.29 2.5L9.73 13l2.56 4.43L18.84 6.93 16.29 2.5z" fill="#EA4335"/>
-              <path d="M22.85 13l-6.56-10.5L13.73 6.93l6.56 10.5L22.85 13z" fill="#FFBA00"/>
-            </svg>
-            <span>Google Drive</span>
-          </button>
-        </div>
+        <button
+          className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center translate-y-1"
+          aria-label="More"
+        >
+          <img src="/Frame 14.png" alt="More" className="w-full h-full rounded-full object-contain" />
+        </button>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-3xl sm:max-w-4xl mx-auto space-y-6 flex flex-col min-h-full">
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center py-20">
-              <div className="mb-6">
-                <div className="w-20 h-20 mx-auto mb-4">
-                  <svg viewBox="0 0 32 32" className="w-full h-full">
-                    <defs>
-                      <linearGradient id="welcomeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#14b8a6" />
-                        <stop offset="50%" stopColor="#8b5cf6" />
-                        <stop offset="100%" stopColor="#06b6d4" />
-                      </linearGradient>
-                    </defs>
-                    <circle cx="16" cy="16" r="6" fill="url(#welcomeGradient)" opacity="0.9" />
-                    <circle cx="8" cy="8" r="3" fill="url(#welcomeGradient)" opacity="0.7" />
-                    <circle cx="24" cy="8" r="3" fill="url(#welcomeGradient)" opacity="0.7" />
-                    <circle cx="8" cy="24" r="3" fill="url(#welcomeGradient)" opacity="0.7" />
-                    <circle cx="24" cy="24" r="3" fill="url(#welcomeGradient)" opacity="0.7" />
-                    <line x1="16" y1="16" x2="8" y2="8" stroke="url(#welcomeGradient)" strokeWidth="1.5" opacity="0.5" />
-                    <line x1="16" y1="16" x2="24" y2="8" stroke="url(#welcomeGradient)" strokeWidth="1.5" opacity="0.5" />
-                    <line x1="16" y1="16" x2="8" y2="24" stroke="url(#welcomeGradient)" strokeWidth="1.5" opacity="0.5" />
-                    <line x1="16" y1="16" x2="24" y2="24" stroke="url(#welcomeGradient)" strokeWidth="1.5" opacity="0.5" />
-                  </svg>
+            <div className="flex flex-col items-center justify-center flex-1 text-center py-8 sm:py-12">
+              <div className="mb-2">
+                <div className="w-20 h-20 mx-auto mb-1">
+                  <img
+                    src="/ChatGPT Image Dec 15, 2025, 12_37_03 PM.png"
+                    alt="Welcome"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
               </div>
-              <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-200 mb-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-200 mb-0.5">
                 Welcome to TOAI
               </h2>
-              <p className="text-slate-600 dark:text-slate-400 max-w-md">
+              <p className="text-slate-600 dark:text-slate-400 max-w-md px-4 sm:px-0">
                 Start a conversation by asking me anything. I'm here to help with your questions, creative projects, and more.
               </p>
             </div>
@@ -117,11 +179,213 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-6 py-4">
-        <div className="max-w-4xl mx-auto">
+      <div className="border-t border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-4">
+        <div className="max-w-3xl sm:max-w-4xl mx-auto">
           <ChatInput onSend={handleSend} />
         </div>
       </div>
+
+      {/* WhatsApp Integration Modal */}
+      {showWhatsAppModal && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <button
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={handleCloseWhatsApp}
+            aria-label="Close WhatsApp connection"
+          />
+
+          {/* Modal */}
+          <div className="relative z-50 w-full max-w-xl rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                  <img
+                    src="/whatsapp-on.png"
+                    alt="WhatsApp"
+                    className="w-5 h-5"
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                    WhatsApp Connect
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {whatsAppStage === 'scan'
+                      ? 'Scan the QR code with WhatsApp to continue'
+                      : 'Select a group where TOAI should assist'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseWhatsApp}
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors"
+                aria-label="Close"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 bg-gradient-to-br from-slate-50 via-slate-50 to-blue-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+              {whatsAppStage === 'scan' ? (
+                <div className="flex flex-col md:flex-row gap-6 items-center md:items-stretch">
+                  {/* QR Preview / Scanner Placeholder */}
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="relative w-56 h-56 rounded-2xl bg-white dark:bg-slate-900 border border-dashed border-emerald-400/70 flex items-center justify-center shadow-inner">
+                      <div className="absolute inset-3 rounded-xl border-2 border-emerald-400/70 pointer-events-none" />
+                      <div className="relative z-10 text-center">
+                        <svg
+                          className="w-16 h-16 mx-auto text-slate-400 dark:text-slate-500"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M4 5h4M5 4v4M4 19h4M5 16v4M16 4h4M19 4v4M16 20h4M19 16v4M9 9h1v1H9zM12 9h1v1h-1zM15 9h1v1h-1zM9 12h1v1H9zM12 12h1v1h-1zM15 12h1v1h-1zM9 15h1v1H9zM12 15h1v1h-1zM15 15h1v1h-1z"
+                          />
+                        </svg>
+                        <p className="mt-3 text-xs font-medium text-slate-600 dark:text-slate-300">
+                          QR scanner preview
+                        </p>
+                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                          Open WhatsApp &gt; Linked devices &gt; Scan this code.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Instructions */}
+                  <div className="flex-1 space-y-3 text-sm">
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">
+                      Link WhatsApp with TOAI
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-slate-600 dark:text-slate-300">
+                      <li>Open WhatsApp on your phone.</li>
+                      <li>Go to <span className="font-medium">Settings &gt; Linked devices</span>.</li>
+                      <li>Tap <span className="font-medium">Link a device</span> and scan this code.</li>
+                    </ol>
+                    <button
+                      onClick={() => setWhatsAppStage('groups')}
+                      className="mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium bg-emerald-500 text-white shadow-soft hover:bg-emerald-600 transition-colors"
+                    >
+                      I have scanned the code
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-slate-700 dark:text-slate-200">
+                    Select the WhatsApp group where TOAI should assist:
+                  </p>
+
+                  <div className="flex flex-col gap-2 mb-1">
+                    <div>
+                      <input
+                        type="text"
+                        value={groupSearch}
+                        onChange={(e) => setGroupSearch(e.target.value)}
+                        placeholder="Search groups…"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/70 focus:border-emerald-500"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
+                      <label className="inline-flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={handleToggleSelectAll}
+                          className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span>Select all (visible)</span>
+                      </label>
+                      <span>{selectedGroups.length} selected</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {filteredWhatsAppGroups.map((group) => {
+                      const isSelected = selectedGroups.includes(group)
+                      return (
+                        <button
+                          key={group}
+                          type="button"
+                          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/90 dark:bg-slate-800 border text-left transition-all ${
+                            isSelected
+                              ? 'border-emerald-500 shadow-md'
+                              : 'border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:shadow-md'
+                          }`}
+                          onClick={() => toggleGroupSelection(group)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleGroupSelection(group)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 flex items-center justify-center text-xs font-semibold">
+                              {group
+                                .split(' ')
+                                .map((w) => w[0])
+                                .join('')
+                                .slice(0, 2)
+                                .toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                                {group}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Connect this group as a WhatsApp workspace.
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            {isSelected ? 'Selected' : 'Select'}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      This is a UI preview only. Add your backend / WhatsApp API integration to complete the
+                      flow.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleConnectSelected}
+                      disabled={!selectedGroups.length}
+                      className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-xs font-semibold bg-emerald-500 text-white shadow-soft hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Connect {selectedGroups.length ? `(${selectedGroups.length})` : ''}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -8,7 +8,7 @@ const Logo = ({ size = 'default' }: { size?: 'small' | 'default' | 'large' }) =>
   return (
     <div className="flex items-center">
       <img 
-        src="/toai-logo.png" 
+        src="/Untitled design (1).png" 
         alt="TOAI Logo" 
         className={`${sizeClasses[size]} w-auto object-contain`}
       />

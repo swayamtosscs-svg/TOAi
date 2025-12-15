@@ -43,9 +43,9 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
   return (
     <div className="flex-1 flex flex-col h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Header */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-6 py-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-[240px]">
             <button
               onClick={onClose}
               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
@@ -63,8 +63,8 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors text-sm font-medium">
+          <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
+            <button className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors text-sm font-medium w-full sm:w-auto">
               Save Prompt (from chat)
             </button>
             <button className="px-4 py-2 rounded-lg bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white font-medium shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] text-sm">
@@ -74,9 +74,9 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Left Sidebar */}
-        <div className="w-64 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col">
+        <div className="w-full md:w-72 border-b md:border-b-0 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col">
           <div className="p-4 space-y-6">
             {/* Search */}
             <div>
@@ -139,9 +139,9 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">Library</h2>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
