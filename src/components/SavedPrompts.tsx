@@ -41,7 +41,7 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
   })
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+  <div className="flex flex-col h-full max-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 overflow-y-auto">
       {/* Header */}
       <div className="border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -74,7 +74,7 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row md:overflow-hidden">
         {/* Left Sidebar */}
         <div className="w-full md:w-72 border-b md:border-b-0 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col">
           <div className="p-4 space-y-6">
