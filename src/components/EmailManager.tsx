@@ -175,13 +175,6 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
     setPreviewContent(initialPreview)
   }
 
-  const handleEmailBodyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEmailBody(e.target.value)
-    // Auto-resize textarea - no max height, let parent container handle scrolling
-    e.target.style.height = 'auto'
-    e.target.style.height = `${e.target.scrollHeight}px`
-  }
-
   const handlePreviewContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPreviewContent(e.target.value)
     // Auto-resize textarea - no max height, let parent container handle scrolling
@@ -378,7 +371,8 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                     </label>
                     <textarea
                       rows={3}
-                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all resize-none scrollbar-hide"
+                      readOnly
+                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 cursor-not-allowed resize-none scrollbar-hide"
                       placeholder="Enter email summary"
                       defaultValue="This email discusses the latest updates and important information regarding the project. Please review the details below and provide your feedback."
                     />
@@ -392,9 +386,9 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                     <textarea
                       ref={emailBodyRef}
                       value={emailBody}
-                      onChange={handleEmailBodyChange}
+                      readOnly
                       rows={12}
-                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all resize-none font-sans text-base leading-relaxed scrollbar-hide"
+                      className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 cursor-not-allowed resize-none font-sans text-base leading-relaxed scrollbar-hide"
                       placeholder="Enter email body content"
                       style={{ minHeight: '300px' }}
                     />
