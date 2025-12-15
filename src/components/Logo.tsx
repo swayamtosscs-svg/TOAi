@@ -1,8 +1,8 @@
 const Logo = ({ size = 'default' }: { size?: 'small' | 'default' | 'large' }) => {
   const sizeClasses = {
-    small: 'h-8',
-    default: 'h-12',
-    large: 'h-16',
+    small: 'h-14',
+    default: 'h-24',
+    large: 'h-28',
   }
 
   return (

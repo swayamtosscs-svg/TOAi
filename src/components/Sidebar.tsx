@@ -21,7 +21,7 @@ const Sidebar = ({ onNewChat, onToggleDarkMode, isDarkMode, onOpenEmail, onOpenS
   return (
     <div className="w-full md:w-72 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border-r border-slate-200 dark:border-slate-700 flex flex-col h-full">
       {/* Logo Section */}
-      <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+      <div className="px-6 pt-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <Logo size="default" />
       </div>
 

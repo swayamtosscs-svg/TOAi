@@ -21,7 +21,7 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
   const integrationIcons = [
     { id: 'whatsapp', label: 'WhatsApp', offSrc: '/whatsapp.png', onSrc: '/whatsapp-on.png' },
     { id: 'email', label: 'Email', offSrc: '/email.png', onSrc: '/email-on.png' },
-    { id: 'drive', label: 'Drive', offSrc: '/drive.png', onSrc: '/drive-on.png' },
+    { id: 'drive', label: 'Google Drive', offSrc: '/drive.png', onSrc: '/drive-on.png' },
     { id: 'mysql', label: 'MySQL', offSrc: '/mysql.png', onSrc: '/mysql-on.png' },
     { id: 'oracle', label: 'Oracle', offSrc: '/oracle.png', onSrc: '/oracle-on.png' },
   ] as const
@@ -122,19 +122,23 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
           {integrationIcons.map((icon) => {
             const isActive = !!activeIcons[icon.id]
             return (
-              <button
-                key={icon.id}
-                onClick={() => handleIconClick(icon.id)}
-                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                aria-label={icon.label}
-                aria-pressed={isActive}
-              >
-                <img
-                  src={isActive ? icon.onSrc : icon.offSrc}
-                  alt={icon.label}
-                  className="w-[18px] h-[18px]"
-                />
-              </button>
+              <div key={icon.id} className="relative group flex flex-col items-center">
+                <button
+                  onClick={() => handleIconClick(icon.id)}
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                  aria-label={icon.label}
+                  aria-pressed={isActive}
+                >
+                  <img
+                    src={isActive ? icon.onSrc : icon.offSrc}
+                    alt={icon.label}
+                    className="w-[18px] h-[18px]"
+                  />
+                </button>
+                <div className="pointer-events-none absolute top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 text-white text-[10px] px-2 py-1 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-1 transition-all duration-150 shadow-lg">
+                  {icon.label}
+                </div>
+              </div>
             )
           })}
         </div>
