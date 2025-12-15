@@ -343,9 +343,9 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
             {/* Modal Content - Single Scrollable Area */}
             <div className="flex-1 flex overflow-y-auto scrollbar-hide">
               {/* Left Panel - Input Fields */}
-              <div className="w-1/2 border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+              <div className="w-1/2 border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-col">
                 {/* Input Fields */}
-                <div className="px-6 py-6 space-y-6">
+                <div className="flex-1 px-6 py-6 space-y-6 overflow-y-auto">
                   {/* To Field */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
