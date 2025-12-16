@@ -127,8 +127,8 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
   const [previewAttachedFiles, setPreviewAttachedFiles] = useState<File[]>([])
   const [emailBody, setEmailBody] = useState<string>('')
   const [previewContent, setPreviewContent] = useState<string>('')
-  const [activeView, setActiveView] = useState<'emails' | 'knowledge'>('emails')
   const [knowledgeFiles, setKnowledgeFiles] = useState<File[]>([])
+  const [showKnowledgeModal, setShowKnowledgeModal] = useState(false)
   const sentTemplates = [
     {
       id: 'finance-template',
@@ -177,7 +177,7 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
   const previewFileInputRef = useRef<HTMLInputElement>(null)
   const emailBodyRef = useRef<HTMLTextAreaElement>(null)
   const previewContentRef = useRef<HTMLTextAreaElement>(null)
-  const knowledgeUploadRef = useRef<HTMLInputElement>(null)
+  const modalKnowledgeUploadRef = useRef<HTMLInputElement>(null)
 
   const categoryFilteredEmails = filter === 'all'
     ? emails
@@ -280,22 +280,22 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
     setAttachedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
-  const handleKnowledgeUploadClick = () => {
-    knowledgeUploadRef.current?.click()
+  const handleModalKnowledgeUploadClick = () => {
+    modalKnowledgeUploadRef.current?.click()
   }
 
-  const handleKnowledgeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleModalKnowledgeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
-      const pdfFiles = Array.from(files).filter((file) =>
-        file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+      const pdfFiles = Array.from(files).filter(
+        (file) => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
       )
       if (pdfFiles.length > 0) {
         setKnowledgeFiles((prev) => [...prev, ...pdfFiles])
       }
     }
-    if (knowledgeUploadRef.current) {
-      knowledgeUploadRef.current.value = ''
+    if (modalKnowledgeUploadRef.current) {
+      modalKnowledgeUploadRef.current.value = ''
     }
   }
 
@@ -341,9 +341,7 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
           <div>
             <h2 className="text-2xl font-bold text-gradient-toai">Email Manager</h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              {activeView === 'knowledge'
-                ? 'Knowledge Base'
-                : filter === 'Sent'
+              {filter === 'Sent'
                 ? `${sentTemplates.length} ${sentTemplates.length === 1 ? 'template' : 'templates'}`
                 : filter === 'Follow up'
                 ? `${followUpTemplates.length} ${followUpTemplates.length === 1 ? 'template' : 'templates'}`
@@ -352,37 +350,20 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
           </div>
         </div>
 
-        {/* Right side toggle: Emails / Knowledge Base */}
+        {/* Right side: only Knowledge Base button (opens popup) */}
         <div className="flex items-center gap-2 bg-slate-100/80 dark:bg-slate-700/60 rounded-full p-1">
           <button
             type="button"
-            onClick={() => setActiveView('emails')}
-            className={`px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all ${
-              activeView === 'emails'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            Emails
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveView('knowledge')}
-            className={`px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all ${
-              activeView === 'knowledge'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            onClick={() => setShowKnowledgeModal(true)}
+            className="px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm"
           >
             Knowledge Base
           </button>
         </div>
       </div>
 
-      {/* Filters / Tabs Content */}
-      {activeView === 'emails' ? (
-        <>
-          {/* Filters */}
+      {/* Filters / Tabs Content - always show Emails view; Knowledge Base opens as popup only */}
+      {/* Filters */}
           <div className="px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white/30 dark:bg-slate-800/30 backdrop-blur-sm">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
@@ -598,176 +579,6 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
           )}
         </div>
       </div>
-        </>
-      ) : (
-        /* Knowledge Base View */
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-8">
-          <div className="max-w-6xl mx-auto space-y-6">
-            {/* Search + Info + Upload */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
-                  Knowledge Base
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                  Frequently used replies, internal notes aur FAQs ek hi jagah se access karein.
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-                <div className="w-full sm:w-72 md:w-80">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search knowledge…"
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 dark:focus:ring-cyan-500/50 dark:focus:border-cyan-500"
-                    />
-                    <svg
-                      className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* PDF Upload */}
-                <div className="flex items-center">
-                  <input
-                    ref={knowledgeUploadRef}
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    multiple
-                    className="hidden"
-                    onChange={handleKnowledgeFileChange}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleKnowledgeUploadClick}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v12m0 0l-4-4m4 4l4-4M6 20h12"
-                      />
-                    </svg>
-                    Upload PDF
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Uploaded PDFs */}
-            {knowledgeFiles.length > 0 && (
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 p-4 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                    Uploaded PDFs ({knowledgeFiles.length})
-                  </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {knowledgeFiles.map((file, index) => (
-                    <span
-                      key={`${file.name}-${index}`}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-700 text-xs sm:text-sm text-slate-800 dark:text-slate-50 border border-slate-200 dark:border-slate-600"
-                    >
-                      <svg
-                        className="w-4 h-4 text-rose-500 dark:text-rose-300"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 2H8a2 2 0 00-2 2v16a2 2 0 002 2h8a2 2 0 002-2V8l-6-6z"
-                        />
-                      </svg>
-                      <span className="truncate max-w-[140px] sm:max-w-[200px]">
-                        {file.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleKnowledgeFileRemove(index)}
-                        className="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                        title="Remove"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Knowledge sections */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 shadow-soft dark:shadow-soft-dark">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                    Saved Replies
-                  </h4>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 dark:bg-teal-900/40 dark:text-teal-200">
-                    For Support / Sales
-                  </span>
-                </div>
-                <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                  <li>• Delay apology + new ETA</li>
-                  <li>• Onboarding welcome email</li>
-                  <li>• Pricing follow‑up with next steps</li>
-                </ul>
-              </div>
-
-              <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 shadow-soft dark:shadow-soft-dark">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                    Internal Playbooks
-                  </h4>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">
-                    Team only
-                  </span>
-                </div>
-                <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                  <li>• How to handle escalation emails</li>
-                  <li>• Quarterly business review structure</li>
-                  <li>• Churn‑risk customer save template</li>
-                </ul>
-              </div>
-
-              <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 shadow-soft dark:shadow-soft-dark">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                    FAQ Snippets
-                  </h4>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200">
-                    Customers
-                  </span>
-                </div>
-                <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                  <li>• Refund and cancellation policy</li>
-                  <li>• Data security & privacy summary</li>
-                  <li>• Integration requirements checklist</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       </div>
 
       {/* Email Detail Popup/Modal */}
@@ -1054,6 +865,129 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Knowledge Base "Add files" Popup */}
+      {showKnowledgeModal && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center px-3 sm:px-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"
+            onClick={() => setShowKnowledgeModal(false)}
+          />
+
+          {/* Modal */}
+          <div className="relative w-full max-w-3xl bg-gradient-to-br from-slate-50 via-blue-50/60 to-cyan-50/60 rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-slate-200 bg-white/80 backdrop-blur">
+              <h3 className="text-sm sm:text-base font-semibold text-slate-900">Knowledge Base</h3>
+              <button
+                type="button"
+                onClick={() => setShowKnowledgeModal(false)}
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-4 sm:px-6 py-8 bg-transparent">
+              {/* Hidden file input just for this modal */}
+              <input
+                ref={modalKnowledgeUploadRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                multiple
+                className="hidden"
+                onChange={handleModalKnowledgeFileChange}
+              />
+
+              <div
+                className="rounded-2xl border border-dashed border-slate-300 bg-white/80 flex flex-col items-center justify-center text-center px-6 py-10 gap-4 cursor-pointer"
+                onClick={handleModalKnowledgeUploadClick}
+              >
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-900 text-white">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4 4m0 0l4-4m-4 4V4"
+                    />
+                  </svg>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm sm:text-base font-medium text-slate-900">
+                    Add documents, code files, images, and more.
+                  </p>
+                  <p className="text-xs sm:text-sm text-slate-600">
+                    TOAI can access these Knowledge Base files when you chat inside this workspace.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={handleModalKnowledgeUploadClick}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v12m0 0l-4-4m4 4l4-4M6 20h12"
+                      />
+                    </svg>
+                    Add files
+                  </button>
+                  <p className="text-[11px] text-slate-500">or drag &amp; drop files here</p>
+                </div>
+              </div>
+
+              {knowledgeFiles.length > 0 && (
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-white/90 p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-slate-900">
+                      Knowledge Base files ({knowledgeFiles.length})
+                    </p>
+                    <p className="text-[11px] text-slate-500">Stored only for this workspace.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                    {knowledgeFiles.map((file, index) => (
+                      <span
+                        key={`${file.name}-${index}`}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 text-xs text-slate-800 border border-slate-200"
+                      >
+                        <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 2H8a2 2 0 00-2 2v16a2 2 0 002 2h8a2 2 0 002-2V8l-6-6z"
+                          />
+                        </svg>
+                        <span className="truncate max-w-[160px] sm:max-w-[220px]">{file.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleKnowledgeFileRemove(index)}
+                          className="text-slate-400 hover:text-red-500 transition-colors"
+                          title="Remove"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

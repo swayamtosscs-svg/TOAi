@@ -47,11 +47,11 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/40 to-cyan-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 px-3">
       <div className="w-full max-w-md max-h-[90vh] overflow-y-auto scrollbar-hide">
         <div className="mb-6 text-center">
-          <div className="inline-flex items-center justify-center mt-3 mb-4">
+          <div className="inline-flex items-center justify-center mt-6 mb-4">
             <img
               src="/ChatGPT Image Dec 15, 2025, 12_37_03 PM.png"
               alt="TOAI logo"
-              className="h-24 w-auto drop-shadow-md"
+              className="h-20 w-auto drop-shadow-md"
             />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
