@@ -89,7 +89,7 @@ const Settings = ({ onClose }: SettingsProps) => {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header – custom menu + logo for Settings dashboard */}
         <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center">
             {/* Left: settings menu trigger (mobile) */}
             <button
               className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -101,36 +101,29 @@ const Settings = ({ onClose }: SettingsProps) => {
               </svg>
             </button>
 
-            {/* Center: TOAI logo */}
-            <div className="flex-1 flex items-center justify-center pointer-events-none">
+            {/* Center: TOAI logo (mobile only) */}
+            <div className="flex-1 flex items-center justify-center md:hidden pointer-events-none">
               <Logo size="small" />
             </div>
 
-            {/* Right: close button (only when Settings opened as overlay) */}
-            {onClose ? (
-              <button
-                onClick={onClose}
-                className="p-2 rounded-full border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-3"
-                title="Close settings"
-              >
-                <svg className="w-4 h-4 text-slate-700 dark:text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            ) : (
-              <div className="w-9" />
-            )}
+            {/* Right: close button (only when Settings opened as overlay), pushed to far right */}
+            <div className="ml-auto flex items-center">
+              {onClose ? (
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-full border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  title="Close settings"
+                >
+                  <svg className="w-4 h-4 text-slate-700 dark:text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              ) : (
+                <div className="w-9" />
+              )}
+            </div>
           </div>
 
-          {/* Desktop subtitle under the main row */}
-          <div className="hidden md:flex flex-col mt-2">
-            <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Settings · {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}
-            </span>
-            <span className="text-sm text-slate-700 dark:text-slate-300">
-              Configure how TOAI behaves for your workspace.
-            </span>
-          </div>
         </div>
 
         {/* Tabs – only for Dashboard section */}
