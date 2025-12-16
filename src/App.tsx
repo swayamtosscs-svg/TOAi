@@ -191,15 +191,17 @@ function App() {
 
         {/* Main Content Scroll Area */}
         <main className="flex-1 flex flex-col h-full overflow-y-auto scrollbar-hide">
-          {showSettings ? (
-            <Settings onClose={() => setShowSettings(false)} />
-          ) : showEmailManager ? (
-            <EmailManager onClose={() => setShowEmailManager(false)} />
-          ) : showSavedPrompts ? (
-            <SavedPrompts onClose={() => setShowSavedPrompts(false)} />
-          ) : (
-            <ChatInterface messages={messages} onSendMessage={handleSendMessage} />
-          )}
+          <div className={`flex-1 flex flex-col px-0 sm:px-0 ${showSettings ? 'settings-enter' : 'home-enter'}`}>
+            {showSettings ? (
+              <Settings onClose={() => setShowSettings(false)} />
+            ) : showEmailManager ? (
+              <EmailManager onClose={() => setShowEmailManager(false)} />
+            ) : showSavedPrompts ? (
+              <SavedPrompts onClose={() => setShowSavedPrompts(false)} />
+            ) : (
+              <ChatInterface messages={messages} onSendMessage={handleSendMessage} />
+            )}
+          </div>
         </main>
       </div>
     </div>

@@ -33,15 +33,15 @@ const Settings = ({ onClose }: SettingsProps) => {
           {navItems.map((item) => {
             const isActive = activeNav === item.id
             return (
-              <button
-                key={item.id}
-                onClick={() => setActiveNav(item.id)}
+            <button
+              key={item.id}
+              onClick={() => setActiveNav(item.id)}
                 className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors rounded-r-2xl ${
                   isActive
                     ? 'bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-200 shadow-sm border-r-2 border-blue-500/80'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
-                }`}
-              >
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+              }`}
+            >
                 <div className="flex items-center gap-3">
                   <span
                     className={`flex items-center justify-center w-8 h-8 rounded-full text-[15px] ${
@@ -51,8 +51,8 @@ const Settings = ({ onClose }: SettingsProps) => {
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                    </svg>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+              </svg>
                   </span>
                   <span className={isActive ? 'font-semibold' : 'font-medium'}>{item.label}</span>
                 </div>
@@ -61,7 +61,7 @@ const Settings = ({ onClose }: SettingsProps) => {
                     Active
                   </span>
                 )}
-              </button>
+            </button>
             )
           })}
         </div>
@@ -71,16 +71,16 @@ const Settings = ({ onClose }: SettingsProps) => {
           <button
             className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/70 transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
                 d="M17 16l4-4m0 0l-4-4m4 4H9m4 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1"
               />
-            </svg>
+                </svg>
             <span>Logout</span>
-          </button>
+              </button>
         </div>
       </div>
 
@@ -118,27 +118,27 @@ const Settings = ({ onClose }: SettingsProps) => {
 
         {/* Tabs – only for Dashboard section */}
         {activeNav === 'dashboard' && (
-          <div className="px-8 pt-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-            <div className="flex gap-8">
-              {[
-                { id: 'model-usage', label: 'Model Usage' },
-                { id: 'api-usage', label: 'API Usage' },
-                { id: 'load-balancing', label: 'Load Balancing' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`pb-3 px-1 text-sm font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+        <div className="px-8 pt-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+          <div className="flex gap-8">
+            {[
+              { id: 'model-usage', label: 'Model Usage' },
+              { id: 'api-usage', label: 'API Usage' },
+              { id: 'load-balancing', label: 'Load Balancing' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`pb-3 px-1 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
+        </div>
         )}
 
         {/* Content Area */}
@@ -278,39 +278,39 @@ const Settings = ({ onClose }: SettingsProps) => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                    <div className="flex items-center justify-center">
-                      <div className="relative w-48 h-48">
-                        <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 100 100">
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="40"
-                            fill="none"
-                            stroke="#e2e8f0"
-                            strokeWidth="8"
-                          />
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="40"
-                            fill="none"
+                  <div className="flex items-center justify-center">
+                    <div className="relative w-48 h-48">
+                      <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 100 100">
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          fill="none"
+                          stroke="#e2e8f0"
+                          strokeWidth="8"
+                        />
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          fill="none"
                             stroke="#4f46e5"
-                            strokeWidth="8"
-                            strokeDasharray={`${81.5 * 2.513} 251.3`}
-                            strokeDashoffset="0"
-                          />
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="40"
-                            fill="none"
+                          strokeWidth="8"
+                          strokeDasharray={`${81.5 * 2.513} 251.3`}
+                          strokeDashoffset="0"
+                        />
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          fill="none"
                             stroke="#38bdf8"
-                            strokeWidth="8"
-                            strokeDasharray={`${18.5 * 2.513} 251.3`}
-                            strokeDashoffset={`-${81.5 * 2.513}`}
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          strokeWidth="8"
+                          strokeDasharray={`${18.5 * 2.513} 251.3`}
+                          strokeDashoffset={`-${81.5 * 2.513}`}
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                             Total tokens
                           </p>
@@ -320,14 +320,14 @@ const Settings = ({ onClose }: SettingsProps) => {
                           <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                             across all models
                           </p>
-                        </div>
                       </div>
                     </div>
+                  </div>
 
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
                             <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
                               Pension others
@@ -340,11 +340,11 @@ const Settings = ({ onClose }: SettingsProps) => {
                         <p className="text-xs text-slate-500 dark:text-slate-400 ml-5">
                           Aviva · 81.5% of total usage.
                         </p>
-                      </div>
+                    </div>
 
                       <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full bg-sky-400" />
                             <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
                               Employment pension
@@ -463,10 +463,10 @@ const Settings = ({ onClose }: SettingsProps) => {
                         Not met
                       </span>
                     </div>
+                      </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
           )}
 
           {/* Dashboard · API Usage */}
@@ -536,7 +536,7 @@ const Settings = ({ onClose }: SettingsProps) => {
                   <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                     <div className="h-full rounded-full bg-emerald-500" style={{ width: '7%' }} />
                   </div>
-                </div>
+                    </div>
 
                 <div className="bg-white dark:bg-slate-900/80 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm px-5 py-4 flex flex-col gap-3">
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -546,12 +546,12 @@ const Settings = ({ onClose }: SettingsProps) => {
                     <span className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
                       64%
                     </span>
-                  </div>
+                    </div>
                   <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                     <div className="h-full rounded-full bg-indigo-500" style={{ width: '64%' }} />
+                    </div>
                   </div>
                 </div>
-              </div>
 
               {/* Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -589,11 +589,11 @@ const Settings = ({ onClose }: SettingsProps) => {
                             className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-sky-500 to-cyan-500"
                             style={{ width: `${row.percent}%` }}
                           />
-                        </div>
+                  </div>
                       </div>
                     ))}
-                  </div>
-                </div>
+                      </div>
+                    </div>
 
                 {/* API keys */}
                 <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm px-5 py-5 flex flex-col gap-4">
@@ -610,15 +610,15 @@ const Settings = ({ onClose }: SettingsProps) => {
                       <span>Production keys</span>
                       <span className="font-medium text-slate-900 dark:text-slate-50">3 active</span>
                     </div>
-                    <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between">
                       <span>Sandbox keys</span>
                       <span className="font-medium text-slate-900 dark:text-slate-50">5 active</span>
-                    </div>
+                        </div>
                     <div className="flex items-center justify-between">
                       <span>Rotated this week</span>
                       <span className="font-medium text-slate-900 dark:text-slate-50">2 keys</span>
+                      </div>
                     </div>
-                  </div>
                   <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                     Use separate keys per environment and per product surface to keep observability clean.
                   </div>
@@ -939,15 +939,16 @@ const Settings = ({ onClose }: SettingsProps) => {
           {activeNav === 'integration' && (
             <div className="max-w-7xl mx-auto space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm px-5 py-5 flex flex-col gap-3">
+                {/* WhatsApp */}
+                <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow px-5 py-5 flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">WhatsApp</p>
                     <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                      Connected
+                      API · QR link
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Sync approved WhatsApp workspaces and route conversations into TOAI inboxes.
+                    Connect WhatsApp via official API or QR linking and stream chats into TOAI.
                   </p>
                   <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                     <span>2 workspaces · 8 active channels</span>
@@ -956,42 +957,109 @@ const Settings = ({ onClose }: SettingsProps) => {
                     Manage connection
                   </button>
                 </div>
-                <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm px-5 py-5 flex flex-col gap-3">
+
+                {/* Gmail API */}
+                <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow px-5 py-5 flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">Google Workspace</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">Gmail API</p>
                     <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
-                      Limited scopes
+                      OAuth 2.0
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Authorize Drive, Gmail and Calendar with least‑privilege scopes for your domain.
+                    Ingest threads, labels and messages from Gmail for smart drafting and triage.
                   </p>
                   <div className="flex flex-wrap gap-1 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Drive</span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Gmail</span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Calendar</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Primary</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Support</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Sales</span>
                   </div>
                   <button className="mt-3 self-start px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                    Configure scopes
+                    Connect Gmail
                   </button>
                 </div>
-                <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm px-5 py-5 flex flex-col gap-3">
+
+                {/* Google Drive API */}
+                <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow px-5 py-5 flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">Databases</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">Google Drive API</p>
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
+                      Read‑only
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Index folders and documents from Drive for retrieval‑augmented answers.
+                  </p>
+                  <div className="flex flex-wrap gap-1 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Docs</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Sheets</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Slides</span>
+                  </div>
+                  <button className="mt-3 self-start px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Configure Drive
+                  </button>
+                </div>
+
+                {/* SQL / Oracle DB */}
+                <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow px-5 py-5 flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">SQL / Oracle DB</p>
                     <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                       3 sources
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Link MySQL, Oracle and warehouse sources for retrieval‑augmented workflows.
+                    Securely connect transactional databases for reporting, summaries and deep dives.
                   </p>
                   <div className="flex flex-wrap gap-1 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                     <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">MySQL</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Postgres</span>
                     <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Oracle</span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Warehouse</span>
                   </div>
                   <button className="mt-3 self-start px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                    Add connector
+                    Add DB connector
+                  </button>
+                </div>
+
+                {/* Tally ERP */}
+                <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow px-5 py-5 flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">Tally ERP</p>
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                      Via gateway
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Connect Tally for ledgers, invoices and GST reports without exporting files manually.
+                  </p>
+                  <div className="flex flex-wrap gap-1 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Ledgers</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Vouchers</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Reports</span>
+                  </div>
+                  <button className="mt-3 self-start px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Configure Tally
+                  </button>
+                </div>
+
+                {/* Custom REST APIs */}
+                <div className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow px-5 py-5 flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">Custom REST APIs</p>
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                      Flexible
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Bring any HTTP JSON API into TOAI with mapping for prompts and responses.
+                  </p>
+                  <div className="flex flex-wrap gap-1 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">GET</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">POST</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800">Webhooks</span>
+                  </div>
+                  <button className="mt-3 self-start px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Define API schema
                   </button>
                 </div>
               </div>
