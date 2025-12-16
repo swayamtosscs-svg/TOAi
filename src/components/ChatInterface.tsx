@@ -145,32 +145,19 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
               <div key={icon.id} className="relative group flex flex-col items-center">
                 <button
                   onClick={() => handleIconClick(icon.id)}
-                  className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center justify-center ${
-                    icon.id === 'whatsapp' || icon.id === 'oracle' ? '-mt-1' : ''
-                  }`}
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   aria-label={icon.label}
                   aria-pressed={isActive}
                 >
                   {icon.id === 'google' ? (
-                    <div className="relative">
-                      <div
-                        className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[11px] font-semibold ${
-                          isActive
-                            ? 'bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white'
-                            : 'border border-slate-400/70 dark:border-slate-500/80 text-slate-400 dark:text-slate-300'
-                        }`}
-                      >
-                        G
-                      </div>
-                      {/* Ellipse 38 - Point indicator */}
-                      <div
-                        className="absolute w-1 h-1 rounded-full bg-[#D9D9D9]"
-                        style={{
-                          left: '23px',
-                          top: '0.5px',
-                          zIndex: 1,
-                        }}
-                      />
+                    <div
+                      className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[11px] font-semibold ${
+                        isActive
+                          ? 'bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white'
+                          : 'border border-slate-400/70 dark:border-slate-500/80 text-slate-400 dark:text-slate-300'
+                      }`}
+                    >
+                      G
                     </div>
                   ) : (
                     <img
