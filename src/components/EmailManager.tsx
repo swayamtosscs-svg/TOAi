@@ -588,8 +588,8 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
               {/* Left Panel - Input Fields */}
               <div className="w-full lg:w-1/2 border-b lg:border-b-0 border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-col">
                 {/* Input Fields + Email Body */}
-                <div className="px-4 sm:px-6 py-6 flex-1 flex flex-col overflow-hidden min-h-0">
-                  <div className="space-y-6 flex-shrink-0">
+                <div className="px-4 sm:px-6 py-6 flex-1 flex flex-col overflow-hidden">
+                  <div className="space-y-6">
                     {/* To Field */}
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -631,11 +631,11 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                   </div>
 
                   {/* Email Body - aligned with right side chat input area */}
-                  <div className="flex flex-col mt-6 flex-1 min-h-0">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex-shrink-0">
+                  <div className="flex flex-col mt-6 flex-1">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       Email Body
                     </label>
-                    <div className="flex-1 min-h-0">
+                    <div className="flex-1 min-h-[260px]">
                       <textarea
                         ref={emailBodyRef}
                         value={emailBody}
@@ -646,6 +646,9 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                     </div>
                   </div>
                 </div>
+
+                {/* Spacer to fine-tune alignment of Email Body bottom with chat input on the right */}
+                <div className="h-10 flex-shrink-0" />
               </div>
 
               {/* Right Panel - Preview */}

@@ -265,7 +265,7 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
 
       {/* Bottom Input Area when conversation has started */}
       {!isWelcome && (
-        <div className="border-t border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-4">
+        <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-4">
           <div className="max-w-3xl sm:max-w-4xl mx-auto">
             <ChatInput onSend={handleSend} />
           </div>

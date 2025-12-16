@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar'
 import ChatInterface from './components/ChatInterface'
 import EmailManager from './components/EmailManager'
 import SavedPrompts from './components/SavedPrompts'
+import Settings from './components/Settings'
 import Logo from './components/Logo'
 import { Message } from './types'
 
@@ -10,6 +11,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [showEmailManager, setShowEmailManager] = useState(false)
   const [showSavedPrompts, setShowSavedPrompts] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
@@ -112,26 +114,36 @@ function App() {
       </header>
 
       <div className="flex flex-1 h-full overflow-hidden">
-        {/* Desktop Sidebar */}
-        <div className="hidden md:block h-full">
-          <Sidebar
+        {/* Desktop Sidebar - Hidden when Settings is shown */}
+        {!showSettings && (
+          <div className="hidden md:block h-full">
+            <Sidebar
             onNewChat={() => {
               setMessages([])
               setShowEmailManager(false)
               setShowSavedPrompts(false)
+              setShowSettings(false)
             }}
             onToggleDarkMode={toggleDarkMode}
             isDarkMode={isDarkMode}
             onOpenEmail={() => {
               setShowEmailManager(true)
               setShowSavedPrompts(false)
+              setShowSettings(false)
             }}
             onOpenSavedPrompts={() => {
               setShowSavedPrompts(true)
               setShowEmailManager(false)
+              setShowSettings(false)
+            }}
+            onOpenSettings={() => {
+              setShowSettings(true)
+              setShowEmailManager(false)
+              setShowSavedPrompts(false)
             }}
           />
-        </div>
+          </div>
+        )}
 
         {/* Mobile Sidebar Overlay */}
         {isSidebarOpenMobile && (
@@ -143,6 +155,7 @@ function App() {
                   setMessages([])
                   setShowEmailManager(false)
                   setShowSavedPrompts(false)
+                  setShowSettings(false)
                   setIsSidebarOpenMobile(false)
                 }}
                 onToggleDarkMode={toggleDarkMode}
@@ -150,11 +163,19 @@ function App() {
                 onOpenEmail={() => {
                   setShowEmailManager(true)
                   setShowSavedPrompts(false)
+                  setShowSettings(false)
                   setIsSidebarOpenMobile(false)
                 }}
                 onOpenSavedPrompts={() => {
                   setShowSavedPrompts(true)
                   setShowEmailManager(false)
+                  setShowSettings(false)
+                  setIsSidebarOpenMobile(false)
+                }}
+                onOpenSettings={() => {
+                  setShowSettings(true)
+                  setShowEmailManager(false)
+                  setShowSavedPrompts(false)
                   setIsSidebarOpenMobile(false)
                 }}
               />
@@ -170,7 +191,9 @@ function App() {
 
         {/* Main Content Scroll Area */}
         <main className="flex-1 flex flex-col h-full overflow-y-auto scrollbar-hide">
-          {showEmailManager ? (
+          {showSettings ? (
+            <Settings onClose={() => setShowSettings(false)} />
+          ) : showEmailManager ? (
             <EmailManager onClose={() => setShowEmailManager(false)} />
           ) : showSavedPrompts ? (
             <SavedPrompts onClose={() => setShowSavedPrompts(false)} />
