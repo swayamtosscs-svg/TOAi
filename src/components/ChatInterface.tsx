@@ -138,54 +138,57 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
       {/* Header */}
       <div className="border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
         <div className="w-10 hidden sm:block" aria-hidden />
-        <div className="flex items-center gap-3 sm:gap-4 text-slate-500 dark:text-slate-300 flex-wrap justify-center sm:justify-start">
-          {integrationIcons.map((icon) => {
-            const isActive = !!activeIcons[icon.id]
-            return (
-              <div key={icon.id} className="relative group flex flex-col items-center">
-                <button
-                  onClick={() => handleIconClick(icon.id)}
-                  className="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                  aria-label={icon.label}
-                  aria-pressed={isActive}
-                >
-                  {icon.id === 'google' ? (
-                    <div
-                      className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[11px] font-semibold ${
-                        isActive
-                          ? 'bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white'
-                          : 'border border-slate-400/70 dark:border-slate-500/80 text-slate-400 dark:text-slate-300'
-                      }`}
-                    >
-                      G
-                    </div>
-                  ) : (
-                    <img
-                      src={isActive ? icon.onSrc : icon.offSrc}
-                      alt={icon.label}
-                      className="w-[18px] h-[18px]"
-                    />
-                  )}
-                  {icon.id === 'google' && (
-                    <div
-                      className="absolute w-1 h-1 rounded-full bg-[#D9D9D9]"
-                      style={{
-                        left: '23px',
-                        top: '5px',
-                        zIndex: 1,
-                        flex: 'none',
-                        order: 1,
-                        flexGrow: 0,
-                      }}
-                    />
-                  )}
-                </button>
-                <div className="pointer-events-none absolute top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 text-white text-[10px] px-2 py-1 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-1 transition-all duration-150 shadow-lg">
-                  {icon.label}
+        {/* Integrations pill with thin rounded rectangle border (always centered) */}
+        <div className="flex-1 flex justify-center">
+          <div className="inline-flex items-center gap-3 sm:gap-4 px-3 py-1 rounded-full border border-slate-300/70 dark:border-slate-600/70 bg-white/80 dark:bg-slate-900/70 text-slate-500 dark:text-slate-300 shadow-sm">
+            {integrationIcons.map((icon) => {
+              const isActive = !!activeIcons[icon.id]
+              return (
+                <div key={icon.id} className="relative group flex flex-col items-center">
+                  <button
+                    onClick={() => handleIconClick(icon.id)}
+                    className="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                    aria-label={icon.label}
+                    aria-pressed={isActive}
+                  >
+                    {icon.id === 'google' ? (
+                      <div
+                        className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[11px] font-semibold ${
+                          isActive
+                            ? 'bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white'
+                            : 'border border-slate-400/70 dark:border-slate-500/80 text-slate-400 dark:text-slate-300'
+                        }`}
+                      >
+                        G
+                      </div>
+                    ) : (
+                      <img
+                        src={isActive ? icon.onSrc : icon.offSrc}
+                        alt={icon.label}
+                        className="w-[18px] h-[18px]"
+                      />
+                    )}
+                    {icon.id === 'google' && (
+                      <div
+                        className="absolute w-1 h-1 rounded-full bg-[#D9D9D9]"
+                        style={{
+                          left: '23px',
+                          top: '5px',
+                          zIndex: 1,
+                          flex: 'none',
+                          order: 1,
+                          flexGrow: 0,
+                        }}
+                      />
+                    )}
+                  </button>
+                  <div className="pointer-events-none absolute top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 text-white text-[10px] px-2 py-1 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-1 transition-all duration-150 shadow-lg">
+                    {icon.label}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
         <div className="flex items-center gap-3 translate-y-1">
           {/* Triangle pattern with 8 dots */}
