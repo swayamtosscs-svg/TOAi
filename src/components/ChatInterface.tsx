@@ -145,7 +145,7 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
               <div key={icon.id} className="relative group flex flex-col items-center">
                 <button
                   onClick={() => handleIconClick(icon.id)}
-                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                  className="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   aria-label={icon.label}
                   aria-pressed={isActive}
                 >
@@ -166,6 +166,19 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
                       className="w-[18px] h-[18px]"
                     />
                   )}
+                  {icon.id === 'google' && (
+                    <div
+                      className="absolute w-1 h-1 rounded-full bg-[#D9D9D9]"
+                      style={{
+                        left: '23px',
+                        top: '5px',
+                        zIndex: 1,
+                        flex: 'none',
+                        order: 1,
+                        flexGrow: 0,
+                      }}
+                    />
+                  )}
                 </button>
                 <div className="pointer-events-none absolute top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 text-white text-[10px] px-2 py-1 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-1 transition-all duration-150 shadow-lg">
                   {icon.label}
@@ -175,19 +188,33 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
           })}
         </div>
         <div className="flex items-center gap-3 translate-y-1">
-          {/* Google-style apps grid icon */}
+          {/* Triangle pattern with 8 dots */}
           <button
             className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-slate-400/50 dark:border-slate-500/60 flex items-center justify-center hover:bg-slate-100/60 dark:hover:bg-slate-700/80 transition-colors"
             aria-label="Google apps"
           >
-            <div className="grid grid-cols-3 gap-[2px]">
-              {Array.from({ length: 9 }).map((_, index) => (
-                <span
-                  // eslint-disable-next-line react/no-array-index-key
-                  key={index}
-                  className="w-1.5 h-1.5 rounded-[2px] bg-slate-400 dark:bg-slate-300"
-                />
-              ))}
+            <div className="flex flex-col items-center gap-[2px]">
+              {/* Triangle pattern: 1-2-3-2 = 8 dots */}
+              {/* Row 1: 1 dot */}
+              <div className="flex gap-[2px]">
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-slate-600 dark:bg-slate-200 transition-colors" />
+              </div>
+              {/* Row 2: 2 dots */}
+              <div className="flex gap-[2px]">
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-slate-600 dark:bg-slate-200 transition-colors" />
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-slate-600 dark:bg-slate-200 transition-colors" />
+              </div>
+              {/* Row 3: 3 dots */}
+              <div className="flex gap-[2px]">
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-slate-600 dark:bg-slate-200 transition-colors" />
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-slate-600 dark:bg-slate-200 transition-colors" />
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-slate-600 dark:bg-slate-200 transition-colors" />
+              </div>
+              {/* Row 4: 2 dots */}
+              <div className="flex gap-[2px]">
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-slate-600 dark:bg-slate-200 transition-colors" />
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-slate-600 dark:bg-slate-200 transition-colors" />
+              </div>
             </div>
           </button>
 

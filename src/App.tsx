@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar'
 import ChatInterface from './components/ChatInterface'
 import EmailManager from './components/EmailManager'
 import SavedPrompts from './components/SavedPrompts'
+import Logo from './components/Logo'
 import { Message } from './types'
 
 function App() {
@@ -79,13 +80,8 @@ function App() {
           </svg>
         </button>
 
-        <div className="flex flex-col items-center">
-          <span className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-            TOAI
-          </span>
-          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            AI Workspace
-          </span>
+        <div className="flex items-center">
+          <Logo size="small" />
         </div>
 
         <button
