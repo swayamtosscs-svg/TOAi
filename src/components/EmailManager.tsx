@@ -880,7 +880,7 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
           />
 
           {/* Modal */}
-          <div className="relative w-full max-w-3xl bg-gradient-to-br from-slate-50 via-blue-50/60 to-cyan-50/60 rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+          <div className="relative w-full max-w-3xl bg-gradient-to-br from-slate-50 via-blue-50/60 to-cyan-50/60 rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-slate-200 bg-white/80 backdrop-blur">
               <h3 className="text-sm sm:text-base font-semibold text-slate-900">Knowledge Base</h3>
@@ -909,10 +909,10 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
               />
 
               <div
-                className="rounded-2xl border border-dashed border-slate-300 bg-white/80 flex flex-col items-center justify-center text-center px-6 py-10 gap-4 cursor-pointer"
+                className="rounded-2xl border border-dashed border-slate-200/90 bg-white/90 shadow-soft flex flex-col items-center justify-center text-center px-6 py-10 gap-4 cursor-pointer"
                 onClick={handleModalKnowledgeUploadClick}
               >
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-900 text-white">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-md">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
@@ -923,18 +923,21 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                   </svg>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm sm:text-base font-medium text-slate-900">
-                    Add documents, code files, images, and more.
+                  <p className="inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600">
+                    Workspace knowledge for your website & business
+                  </p>
+                  <p className="text-sm sm:text-base font-semibold text-slate-900 mt-1">
+                    Add product docs, FAQs, pitch decks, and website content.
                   </p>
                   <p className="text-xs sm:text-sm text-slate-600">
-                    TOAI can access these Knowledge Base files when you chat inside this workspace.
+                    TOAI will use these files to answer questions about your brand, site, and customers.
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center gap-3 mt-2">
                   <button
                     type="button"
                     onClick={handleModalKnowledgeUploadClick}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-soft hover:shadow-lg hover:brightness-105 transition-all"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -946,7 +949,7 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                     </svg>
                     Add files
                   </button>
-                  <p className="text-[11px] text-slate-500">or drag &amp; drop files here</p>
+                  <p className="text-[11px] text-slate-500">or drag &amp; drop website files here</p>
                 </div>
               </div>
 
