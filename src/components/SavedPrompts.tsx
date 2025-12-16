@@ -169,6 +169,55 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
                         {prompt.description}
                       </p>
                     </div>
+
+                    {/* Compact avatar + copy/edit icons for each saved prompt */}
+                    <div className="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400 ml-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 flex items-center justify-center text-xs font-semibold text-white shadow-soft">
+                        {prompt.owner.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {/* Copy */}
+                        <button
+                          type="button"
+                          className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                          aria-label="Copy prompt"
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2M10 18h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </button>
+                        {/* Edit */}
+                        <button
+                          type="button"
+                          className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                          aria-label="Edit prompt"
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15.232 5.232l3.536 3.536M4 20h4.5L19 9.5l-4.5-4.5L4 15.5V20z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between mb-4">

@@ -8,6 +8,7 @@ interface MessageBubbleProps {
 const MessageBubble = ({ message }: MessageBubbleProps) => {
   const [showActions, setShowActions] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [isSavedPrompt, setIsSavedPrompt] = useState(false)
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content)
@@ -18,6 +19,11 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
   const handleEdit = () => {
     // Edit functionality - can be implemented later
     console.log('Edit message:', message.id)
+  }
+
+  const handleToggleSavePrompt = () => {
+    // Toggle saved prompt flag for this user message (UI only for now)
+    setIsSavedPrompt((prev) => !prev)
   }
 
   const isUser = message.role === 'user'
@@ -54,6 +60,7 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
         {/* Hover Actions - Below the text */}
         {showActions && (
           <div className={`flex gap-2 items-center px-2 mt-1 animate-fade-in ${isUser ? 'justify-end' : 'justify-start'}`}>
+            {/* Copy */}
             <button
               onClick={handleCopy}
               className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-slate-600 dark:text-slate-300"
@@ -69,6 +76,8 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
                 </svg>
               )}
             </button>
+
+            {/* Edit (user messages only) */}
             {isUser && (
               <button
                 onClick={handleEdit}
@@ -80,6 +89,28 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
                 </svg>
               </button>
             )}
+
+            {/* Save prompt bookmark (user messages only) */}
+            {isUser && (
+              <button
+                onClick={handleToggleSavePrompt}
+                className={`p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors ${
+                  isSavedPrompt ? 'text-teal-600 dark:text-teal-400' : 'text-slate-600 dark:text-slate-300'
+                }`}
+                title={isSavedPrompt ? 'Saved to prompts' : 'Save as prompt'}
+              >
+                <svg className="w-4 h-4" fill={isSavedPrompt ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* Regenerate (assistant messages only) */}
             {!isUser && (
               <button
                 className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-slate-600 dark:text-slate-300"
