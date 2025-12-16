@@ -5,6 +5,7 @@ import EmailManager from './components/EmailManager'
 import SavedPrompts from './components/SavedPrompts'
 import Settings from './components/Settings'
 import Logo from './components/Logo'
+import Auth from './components/Auth'
 import { Message, Project } from './types'
 
 function App() {
@@ -17,6 +18,9 @@ function App() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('isAuthenticated') === 'true'
+  })
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
     if (saved !== null) {
@@ -33,6 +37,17 @@ function App() {
       document.documentElement.classList.remove('dark')
     }
   }, [])
+
+  const handleAuthenticated = () => {
+    setIsAuthenticated(true)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated')
+    setIsAuthenticated(false)
+    setShowSettings(false)
+    setIsSidebarOpenMobile(false)
+  }
 
   const handleSendMessage = (content: string) => {
     const userMessage: Message = {
@@ -78,6 +93,10 @@ function App() {
   const activeProjectName = selectedProjectId
     ? projects.find((p) => p.id === selectedProjectId)?.name
     : undefined
+
+  if (!isAuthenticated) {
+    return <Auth onAuthenticated={handleAuthenticated} />
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -263,7 +282,10 @@ function App() {
         <main className="flex-1 flex flex-col h-full overflow-y-auto scrollbar-hide">
           <div className={`flex-1 flex flex-col px-0 sm:px-0 ${showSettings ? 'settings-enter' : 'home-enter'}`}>
             {showSettings ? (
-              <Settings onClose={() => setShowSettings(false)} />
+              <Settings
+                onClose={() => setShowSettings(false)}
+                onLogout={handleLogout}
+              />
             ) : showEmailManager ? (
               <EmailManager onClose={() => setShowEmailManager(false)} />
             ) : showSavedPrompts ? (

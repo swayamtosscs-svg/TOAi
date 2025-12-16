@@ -3,9 +3,10 @@ import Logo from './Logo'
 
 interface SettingsProps {
   onClose?: () => void
+  onLogout?: () => void
 }
 
-const Settings = ({ onClose }: SettingsProps) => {
+const Settings = ({ onClose, onLogout }: SettingsProps) => {
   const [activeTab, setActiveTab] = useState<'model-usage' | 'api-usage' | 'load-balancing'>('model-usage')
   const [activeNav, setActiveNav] = useState('dashboard')
   const [showNavMobile, setShowNavMobile] = useState(false)
@@ -70,6 +71,8 @@ const Settings = ({ onClose }: SettingsProps) => {
         {/* Logout Section */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-700">
           <button
+            type="button"
+            onClick={onLogout}
             className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/70 transition-colors"
           >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1168,6 +1171,8 @@ const Settings = ({ onClose }: SettingsProps) => {
 
             <div className="p-4 border-t border-slate-200 dark:border-slate-700">
               <button
+                type="button"
+                onClick={onLogout}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/70 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
