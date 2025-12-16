@@ -2,9 +2,10 @@ import { useState, useRef, KeyboardEvent } from 'react'
 
 interface ChatInputProps {
   onSend: (content: string) => void
+  activeProjectName?: string
 }
 
-const ChatInput = ({ onSend }: ChatInputProps) => {
+const ChatInput = ({ onSend, activeProjectName }: ChatInputProps) => {
   const [input, setInput] = useState('')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -42,7 +43,7 @@ const ChatInput = ({ onSend }: ChatInputProps) => {
     const files = e.target.files
     if (files && files.length > 0) {
       const fileArray = Array.from(files)
-      setAttachedFiles(prev => [...prev, ...fileArray])
+      setAttachedFiles((prev) => [...prev, ...fileArray])
     }
     // Reset input so same file can be selected again
     if (fileInputRef.current) {
@@ -51,8 +52,12 @@ const ChatInput = ({ onSend }: ChatInputProps) => {
   }
 
   const handleRemoveFile = (index: number) => {
-    setAttachedFiles(prev => prev.filter((_, i) => i !== index))
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index))
   }
+
+  const placeholder = activeProjectName
+    ? `Ask TOAI in "${activeProjectName}"…`
+    : 'Ask TOAI…'
 
   return (
     <div className="relative flex flex-col gap-2">
@@ -120,12 +125,12 @@ const ChatInput = ({ onSend }: ChatInputProps) => {
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Ask TOAI…"
+            placeholder={placeholder}
             rows={1}
             className="flex-1 min-w-0 px-2 py-1.5 bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 resize-none focus:outline-none text-[15px] leading-relaxed"
             style={{ minHeight: '32px', maxHeight: '120px' }}
           />
-          
+
           {/* Voice Button */}
           <button
             className="p-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
@@ -154,4 +159,3 @@ const ChatInput = ({ onSend }: ChatInputProps) => {
 }
 
 export default ChatInput
-

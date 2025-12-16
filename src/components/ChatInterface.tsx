@@ -7,9 +7,10 @@ import { Message } from '../types'
 interface ChatInterfaceProps {
   messages: Message[]
   onSendMessage: (content: string) => void
+  activeProjectName?: string
 }
 
-const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInterfaceProps) => {
   const [isTyping, setIsTyping] = useState(false)
   const [activeIcons, setActiveIcons] = useState<Record<string, boolean>>({})
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
@@ -165,7 +166,13 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
                       <img
                         src={isActive ? icon.onSrc : icon.offSrc}
                         alt={icon.label}
-                        className="w-[18px] h-[18px]"
+                        className={`w-[18px] h-[18px] ${
+                          icon.id === 'whatsapp'
+                            ? '-translate-y-[3px]'
+                            : icon.id === 'oracle'
+                            ? '-translate-y-[1px]'
+                            : ''
+                        }`}
                       />
                     )}
                     {icon.id === 'google' && (
@@ -252,7 +259,7 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
                 Hi, <span className="font-semibold">User</span> 👋
               </p>
               <div className="w-full mt-2">
-                <ChatInput onSend={handleSend} />
+                <ChatInput onSend={handleSend} activeProjectName={activeProjectName} />
               </div>
             </div>
           )}
@@ -270,7 +277,7 @@ const ChatInterface = ({ messages, onSendMessage }: ChatInterfaceProps) => {
       {!isWelcome && (
         <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-4">
           <div className="max-w-3xl sm:max-w-4xl mx-auto">
-            <ChatInput onSend={handleSend} />
+            <ChatInput onSend={handleSend} activeProjectName={activeProjectName} />
           </div>
         </div>
       )}

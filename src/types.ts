@@ -11,6 +11,11 @@ export interface ChatHistory {
   timestamp: Date
 }
 
+export interface Project {
+  id: string
+  name: string
+}
+
 export interface Email {
   id: string
   from: string

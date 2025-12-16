@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Logo from './Logo'
-import { ChatHistory } from '../types'
+import { ChatHistory, Project } from '../types'
 
 interface SidebarProps {
   onNewChat: () => void
@@ -8,10 +8,25 @@ interface SidebarProps {
   isDarkMode: boolean
   onOpenEmail: () => void
   onOpenSavedPrompts: () => void
+  projects: Project[]
+  onOpenProjectsHome: () => void
+  onNewProject: () => void
+  onOpenProject: (id: string) => void
   onOpenSettings: () => void
 }
 
-const Sidebar = ({ onNewChat, onToggleDarkMode, isDarkMode, onOpenEmail, onOpenSavedPrompts, onOpenSettings }: SidebarProps) => {
+const Sidebar = ({
+  onNewChat,
+  onToggleDarkMode,
+  isDarkMode,
+  onOpenEmail,
+  onOpenSavedPrompts,
+  projects,
+  onOpenProjectsHome,
+  onNewProject,
+  onOpenProject,
+  onOpenSettings,
+}: SidebarProps) => {
   const [chatHistory] = useState<ChatHistory[]>([
     { id: '1', title: 'Understanding AI concepts', timestamp: new Date() },
     { id: '2', title: 'Web development help', timestamp: new Date(Date.now() - 86400000) },
@@ -20,7 +35,7 @@ const Sidebar = ({ onNewChat, onToggleDarkMode, isDarkMode, onOpenEmail, onOpenS
   const [isExploreOpen, setIsExploreOpen] = useState(true)
 
   return (
-    <div className="w-full md:w-72 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border-r border-slate-200 dark:border-slate-700 flex flex-col h-full">
+    <div className="w-full md:w-72 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border-r border-slate-200 dark:border-slate-700 flex flex-col h-full overflow-y-auto scrollbar-hide">
       {/* Logo Section (aligned with main header border) */}
       <div className="px-5 pt-[25px] pb-[25px] border-b border-slate-200 dark:border-slate-700 flex items-center justify-center">
         <Logo size="default" />
@@ -84,8 +99,67 @@ const Sidebar = ({ onNewChat, onToggleDarkMode, isDarkMode, onOpenEmail, onOpenS
         )}
       </div>
 
+      {/* Projects Section */}
+      <div className="px-4 pb-2">
+        {projects.length === 0 ? (
+          // When no projects, show single "Projects" row that opens popup
+          <button
+            onClick={onOpenProjectsHome}
+            className="w-full px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors flex items-center justify-between"
+          >
+            <span className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+                  />
+                </svg>
+              </span>
+              <span>Projects</span>
+            </span>
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-slate-300 dark:border-slate-600 text-[13px] text-slate-600 dark:text-slate-300">
+              +
+            </span>
+          </button>
+        ) : (
+          <>
+            <div className="flex items-center justify-between px-2 mb-1">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Projects
+              </span>
+            </div>
+            <div className="space-y-1">
+              <button
+                onClick={onNewProject}
+                className="w-full px-3 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/70 transition-colors flex items-center gap-2"
+              >
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-slate-300 dark:border-slate-600 text-[11px]">
+                  +
+                </span>
+                New project
+              </button>
+              {projects.map((project) => (
+                <button
+                  key={project.id}
+                  onClick={() => onOpenProject(project.id)}
+                  className="w-full px-3 py-2 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors flex items-center gap-2"
+                >
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    {project.name.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="truncate">{project.name}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Chat History */}
-      <div className="flex-1 overflow-y-auto px-4 scrollbar-thin">
+      <div className="px-4 pb-2">
         <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 px-2">
           Recent
         </div>

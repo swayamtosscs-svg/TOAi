@@ -128,12 +128,6 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
           {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
-
-      {isUser && (
-        <div className="w-8 h-8 rounded-full bg-slate-300 dark:bg-slate-600 flex-shrink-0 flex items-center justify-center">
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">U</span>
-        </div>
-      )}
     </div>
   )
 }
