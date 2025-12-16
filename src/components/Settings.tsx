@@ -8,6 +8,7 @@ interface SettingsProps {
 const Settings = ({ onClose }: SettingsProps) => {
   const [activeTab, setActiveTab] = useState<'model-usage' | 'api-usage' | 'load-balancing'>('model-usage')
   const [activeNav, setActiveNav] = useState('dashboard')
+  const [showNavMobile, setShowNavMobile] = useState(false)
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -20,9 +21,9 @@ const Settings = ({ onClose }: SettingsProps) => {
   ]
 
   return (
-    <div className="flex h-full bg-white dark:bg-slate-900">
-      {/* Left Sidebar Navigation */}
-      <div className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
+    <div className="flex flex-col md:flex-row h-full bg-white dark:bg-slate-900">
+      {/* Left Sidebar Navigation (desktop only) */}
+      <div className="hidden md:flex md:w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-col">
         {/* Logo Section - reuse main app logo */}
         <div className="px-5 pt-[25px] pb-[25px] border-b border-slate-200 dark:border-slate-700">
           <Logo size="default" />
@@ -86,63 +87,79 @@ const Settings = ({ onClose }: SettingsProps) => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <div className="px-8 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+        {/* Top Header – custom menu + logo for Settings dashboard */}
+        <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {onClose && (
-                <button
-                  onClick={onClose}
-                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                  title="Close"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-              <div className="flex flex-col">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Settings · {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}
-                </span>
-                <span className="text-sm text-slate-700 dark:text-slate-300">
-                  Configure how TOAI behaves for your workspace.
-                </span>
-              </div>
+            {/* Left: settings menu trigger (mobile) */}
+            <button
+              className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              onClick={() => setShowNavMobile(true)}
+              title="Open settings menu"
+            >
+              <svg className="w-5 h-5 text-slate-700 dark:text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h13M4 17h10" />
+              </svg>
+            </button>
+
+            {/* Center: TOAI logo */}
+            <div className="flex-1 flex items-center justify-center pointer-events-none">
+              <Logo size="small" />
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">
-              Hi, <span className="font-semibold">useradmin_example</span>
-            </div>
+
+            {/* Right: close button (only when Settings opened as overlay) */}
+            {onClose ? (
+              <button
+                onClick={onClose}
+                className="p-2 rounded-full border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-3"
+                title="Close settings"
+              >
+                <svg className="w-4 h-4 text-slate-700 dark:text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            ) : (
+              <div className="w-9" />
+            )}
+          </div>
+
+          {/* Desktop subtitle under the main row */}
+          <div className="hidden md:flex flex-col mt-2">
+            <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Settings · {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}
+            </span>
+            <span className="text-sm text-slate-700 dark:text-slate-300">
+              Configure how TOAI behaves for your workspace.
+            </span>
           </div>
         </div>
 
         {/* Tabs – only for Dashboard section */}
         {activeNav === 'dashboard' && (
-        <div className="px-8 pt-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-          <div className="flex gap-8">
-            {[
-              { id: 'model-usage', label: 'Model Usage' },
-              { id: 'api-usage', label: 'API Usage' },
-              { id: 'load-balancing', label: 'Load Balancing' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`pb-3 px-1 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+            <div className="flex gap-6 sm:gap-8 overflow-x-auto scrollbar-hide -mb-px">
+              {[
+                { id: 'model-usage', label: 'Model Usage' },
+                { id: 'api-usage', label: 'API Usage' },
+                { id: 'load-balancing', label: 'Load Balancing' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`pb-3 px-0.5 sm:px-1 text-sm font-medium whitespace-nowrap border-b-2 ${
+                    activeTab === tab.id
+                      ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400'
+                      : 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
         )}
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 p-8">
+        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 px-4 py-6 sm:px-6 lg:px-8">
           {activeNav === 'dashboard' && activeTab === 'model-usage' && (
             <div className="max-w-7xl mx-auto space-y-8">
               {/* KPI row */}
@@ -1101,6 +1118,85 @@ const Settings = ({ onClose }: SettingsProps) => {
           )}
         </div>
       </div>
+
+      {/* Mobile settings menu drawer */}
+      {showNavMobile && (
+        <div className="fixed inset-0 z-40 flex md:hidden">
+          <div className="w-72 max-w-[80%] h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col">
+            <div className="px-5 pt-4 pb-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Settings
+              </span>
+              <button
+                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                onClick={() => setShowNavMobile(false)}
+                title="Close menu"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 py-3 space-y-1 overflow-y-auto">
+              {navItems.map((item) => {
+                const isActive = activeNav === item.id
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveNav(item.id)
+                      setShowNavMobile(false)
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-200'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`flex items-center justify-center w-8 h-8 rounded-full text-[15px] ${
+                          isActive
+                            ? 'bg-blue-600 text-white dark:bg-blue-500'
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-200'
+                        }`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                        </svg>
+                      </span>
+                      <span className={isActive ? 'font-semibold' : 'font-medium'}>{item.label}</span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+              <button
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/70 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H9m4 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1"
+                  />
+                </svg>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+
+          <button
+            className="flex-1 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setShowNavMobile(false)}
+            aria-label="Close settings menu"
+          />
+        </div>
+      )}
     </div>
   )
 }
