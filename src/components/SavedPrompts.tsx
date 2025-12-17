@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ScheduleModal from './ScheduleModal'
 
 interface SavedPromptsProps {
   onClose: () => void
@@ -39,6 +40,7 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
     teamPrompts: false,
     favorites: false
   })
+  const [selectedPromptForSchedule, setSelectedPromptForSchedule] = useState<Prompt | null>(null)
 
   return (
   <div className="flex flex-col h-full max-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 overflow-y-auto">
@@ -251,7 +253,10 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
                     <button className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-white bg-green-500 hover:bg-green-600 transition-colors">
                       Run
                     </button>
-                    <button className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
+                    <button 
+                      onClick={() => setSelectedPromptForSchedule(prompt)}
+                      className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+                    >
                       Schedule
                     </button>
                     <button className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
@@ -264,6 +269,14 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
           </div>
         </div>
       </div>
+
+      {/* Schedule Modal */}
+      {selectedPromptForSchedule && (
+        <ScheduleModal
+          prompt={selectedPromptForSchedule}
+          onClose={() => setSelectedPromptForSchedule(null)}
+        />
+      )}
     </div>
   )
 }

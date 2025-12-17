@@ -66,7 +66,7 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
 
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xl px-4 py-5">
           {/* Tabs */}
-          <div className="flex mb-4 rounded-full bg-slate-100 dark:bg-slate-800 p-1">
+          <div className="flex mb-3 rounded-full bg-slate-100 dark:bg-slate-800 p-1">
             <button
               type="button"
               onClick={() => setMode('login')}

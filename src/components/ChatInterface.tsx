@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import MessageBubble from './MessageBubble'
 import ChatInput from './ChatInput'
 import TypingIndicator from './TypingIndicator'
+import ScheduleModal from './ScheduleModal'
 import { Message } from '../types'
 
 interface ChatInterfaceProps {
@@ -18,6 +19,14 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
   const [whatsAppStage, setWhatsAppStage] = useState<'scan' | 'groups'>('scan')
   const [selectedGroups, setSelectedGroups] = useState<string[]>([])
   const [groupSearch, setGroupSearch] = useState('')
+  const [scheduledPromptFromChat, setScheduledPromptFromChat] = useState<{
+    id: string
+    title: string
+    description: string
+    owner: string
+    lastRun: string
+    tags: string[]
+  } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const integrationIcons = [
@@ -42,6 +51,22 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
       setIsTyping(true)
       setTimeout(() => setIsTyping(false), 1000)
     }
+  }
+
+  const handleSavePromptFromChat = (content: string) => {
+    const now = new Date()
+    const firstLine = content.split('\n')[0] || ''
+    const title =
+      firstLine.trim().slice(0, 80) || 'Saved Chat Prompt'
+
+    setScheduledPromptFromChat({
+      id: now.getTime().toString(),
+      title,
+      description: content,
+      owner: 'You',
+      lastRun: now.toISOString().slice(0, 10),
+      tags: [],
+    })
   }
 
   const handleIconClick = (id: string) => {
@@ -259,13 +284,21 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
                 Hi, <span className="font-semibold">User</span> 👋
               </p>
               <div className="w-full mt-2">
-                <ChatInput onSend={handleSend} activeProjectName={activeProjectName} />
+                <ChatInput
+                  onSend={handleSend}
+                  activeProjectName={activeProjectName}
+                  onSavePrompt={handleSavePromptFromChat}
+                />
               </div>
             </div>
           )}
 
           {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            <MessageBubble
+              key={message.id}
+              message={message}
+              onSavePromptFromMessage={handleSavePromptFromChat}
+            />
           ))}
 
           {isTyping && <TypingIndicator />}
@@ -277,7 +310,11 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
       {!isWelcome && (
         <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-4">
           <div className="max-w-3xl sm:max-w-4xl mx-auto">
-            <ChatInput onSend={handleSend} activeProjectName={activeProjectName} />
+            <ChatInput
+              onSend={handleSend}
+              activeProjectName={activeProjectName}
+              onSavePrompt={handleSavePromptFromChat}
+            />
           </div>
         </div>
       )}
@@ -602,6 +639,14 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
             </div>
           </div>
         </div>
+      )}
+
+      {/* Schedule modal opened from chat save button */}
+      {scheduledPromptFromChat && (
+        <ScheduleModal
+          prompt={scheduledPromptFromChat}
+          onClose={() => setScheduledPromptFromChat(null)}
+        />
       )}
     </div>
   )

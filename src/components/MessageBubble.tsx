@@ -3,9 +3,10 @@ import { Message } from '../types'
 
 interface MessageBubbleProps {
   message: Message
+  onSavePromptFromMessage?: (content: string) => void
 }
 
-const MessageBubble = ({ message }: MessageBubbleProps) => {
+const MessageBubble = ({ message, onSavePromptFromMessage }: MessageBubbleProps) => {
   const [showActions, setShowActions] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isSavedPrompt, setIsSavedPrompt] = useState(false)
@@ -22,8 +23,10 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
   }
 
   const handleToggleSavePrompt = () => {
-    // Toggle saved prompt flag for this user message (UI only for now)
     setIsSavedPrompt((prev) => !prev)
+    if (onSavePromptFromMessage) {
+      onSavePromptFromMessage(message.content)
+    }
   }
 
   const isUser = message.role === 'user'
