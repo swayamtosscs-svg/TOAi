@@ -23,7 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# Backend folder
+# Backend folder (exclude everything except specific files)
 backend/
+!backend/drive-mail-connection.md
+!backend/requirements.txt
+!backend/run.py
 backend.zip
 

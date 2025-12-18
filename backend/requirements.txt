@@ -1,0 +1,35 @@
+# FastAPI and server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# AI/ML Libraries
+groq>=0.4.0
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-huggingface>=0.0.1
+langchain-groq>=0.0.1
+langchain-experimental>=0.0.40
+langchain-text-splitters>=0.0.1
+
+# Document Processing
+python-docx>=1.1.0
+pdfplumber>=0.10.0
+pandas>=2.0.0
+
+# Google APIs
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-api-python-client>=2.100.0
+
+# Image Processing
+Pillow>=10.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+requests>=2.31.0
+pydantic>=2.0.0
+
+# Optional: OCR support (uncomment if needed)
+# pytesseract>=0.3.10
+# opencv-python>=4.8.0
+
