@@ -4,9 +4,10 @@ import { createUserSave } from '../api'
 interface ChatInputProps {
   onSend: (content: string) => void
   activeProjectName?: string
+  onSavePrompt?: (content: string) => void
 }
 
-const ChatInput = ({ onSend, activeProjectName }: ChatInputProps) => {
+const ChatInput = ({ onSend, activeProjectName, onSavePrompt }: ChatInputProps) => {
   const [input, setInput] = useState('')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [showSavePromptModal, setShowSavePromptModal] = useState(false)
@@ -56,6 +57,13 @@ const ChatInput = ({ onSend, activeProjectName }: ChatInputProps) => {
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
+  }
+
+  const handleSavePromptClick = () => {
+    if (!onSavePrompt) return
+    const trimmed = input.trim()
+    if (!trimmed) return
+    onSavePrompt(trimmed)
   }
 
   const handleRemoveFile = (index: number) => {
@@ -116,6 +124,7 @@ const ChatInput = ({ onSend, activeProjectName }: ChatInputProps) => {
         <div className="relative flex items-center gap-1 sm:gap-0 rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-soft dark:shadow-soft-dark focus-within:ring-2 focus-within:ring-teal-500/50 focus-within:border-teal-500 dark:focus-within:ring-cyan-500/50 dark:focus-within:border-cyan-500 transition-all min-h-[40px]">
           {/* Save Prompt Button */}
           <button
+            onClick={handleSavePromptClick}
             className="p-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
             title="Save Prompt"
             type="button"
