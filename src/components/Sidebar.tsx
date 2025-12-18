@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Logo from './Logo'
 import { ChatHistory, Project } from '../types'
+import { fetchMyMessages } from '../api'
 
 interface SidebarProps {
   onNewChat: () => void
@@ -13,6 +14,7 @@ interface SidebarProps {
   onNewProject: () => void
   onOpenProject: (id: string) => void
   onOpenSettings: () => void
+  onOpenSession: (sessionId: string) => void
 }
 
 const Sidebar = ({
@@ -26,13 +28,44 @@ const Sidebar = ({
   onNewProject,
   onOpenProject,
   onOpenSettings,
+  onOpenSession,
 }: SidebarProps) => {
-  const [chatHistory] = useState<ChatHistory[]>([
-    { id: '1', title: 'Understanding AI concepts', timestamp: new Date() },
-    { id: '2', title: 'Web development help', timestamp: new Date(Date.now() - 86400000) },
-    { id: '3', title: 'Creative writing ideas', timestamp: new Date(Date.now() - 172800000) },
-  ])
+  const [chatHistory, setChatHistory] = useState<ChatHistory[]>([])
   const [isExploreOpen, setIsExploreOpen] = useState(true)
+
+  // Load recent chat history from backend (toai_message)
+  useEffect(() => {
+    const loadHistory = async () => {
+      const messages = await fetchMyMessages(50)
+
+      // Group messages by session_id and build simple titles from first user message
+      const sessions: Record<string, ChatHistory> = {}
+      for (const msg of messages) {
+        const key = msg.session_id
+        const isUser = msg.sender_type === 'user'
+
+        if (!sessions[key]) {
+          sessions[key] = {
+            id: key,
+            title: isUser ? msg.message.slice(0, 60) || 'New conversation' : 'New conversation',
+            timestamp: new Date(msg.created_at),
+          }
+        } else if (new Date(msg.created_at) > sessions[key].timestamp) {
+          sessions[key].timestamp = new Date(msg.created_at)
+          if (isUser && msg.message) {
+            sessions[key].title = msg.message.slice(0, 60)
+          }
+        }
+      }
+
+      const list = Object.values(sessions).sort(
+        (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+      )
+      setChatHistory(list.slice(0, 10))
+    }
+
+    loadHistory()
+  }, [])
 
   return (
     <div className="w-full md:w-72 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border-r border-slate-200 dark:border-slate-700 flex flex-col h-full overflow-y-auto scrollbar-hide">
@@ -175,6 +208,7 @@ const Sidebar = ({
           {chatHistory.map((chat) => (
             <button
               key={chat.id}
+              onClick={() => onOpenSession(chat.id)}
               className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors duration-150 truncate"
             >
               {chat.title}

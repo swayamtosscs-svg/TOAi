@@ -1,123 +1,19 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Email } from '../types'
 
 interface EmailManagerProps {
   onClose: () => void
 }
 
+const API_BASE = 'http://localhost:5000'
+
 const EmailManager = ({ onClose }: EmailManagerProps) => {
-  const [emails, setEmails] = useState<Email[]>([
-    {
-      id: '1',
-      from: 'Sarah Johnson',
-      fromEmail: 'sarah.johnson@example.com',
-      subject: 'Project Update - Q4 Planning',
-      preview: 'Hi, I wanted to share the latest updates on our Q4 planning session. We have some exciting developments...',
-      timestamp: new Date(),
-      read: false,
-      category: 'Internal'
-    },
-    {
-      id: '2',
-      from: 'Michael Chen',
-      fromEmail: 'mchen@techcorp.com',
-      subject: 'Meeting Request - Product Review',
-      preview: 'Would you be available for a product review meeting this week? I have some important updates to discuss...',
-      timestamp: new Date(Date.now() - 3600000),
-      read: false,
-      category: 'Client'
-    },
-    {
-      id: '3',
-      from: 'Newsletter Team',
-      fromEmail: 'newsletter@designweekly.com',
-      subject: 'Weekly Design Inspiration - Issue #42',
-      preview: 'This week we explore modern UI trends, color palettes, and typography choices that are shaping 2024...',
-      timestamp: new Date(Date.now() - 7200000),
-      read: true,
-      category: 'Others'
-    },
-    {
-      id: '4',
-      from: 'Alex Rivera',
-      fromEmail: 'alex.rivera@startup.io',
-      subject: 'Partnership Opportunity',
-      preview: 'I hope this message finds you well. I wanted to reach out regarding a potential partnership opportunity...',
-      timestamp: new Date(Date.now() - 86400000),
-      read: false,
-      category: 'Client'
-    },
-    {
-      id: '4-otp',
-      from: 'Bank Alerts',
-      fromEmail: 'no-reply@securebank.com',
-      subject: 'Your one-time password (OTP) for login',
-      preview: 'Use 482193 as your one-time password to complete your secure login. Do not share this code with anyone.',
-      timestamp: new Date(Date.now() - 5 * 60 * 1000),
-      read: false,
-      category: 'OTP'
-    },
-    {
-      id: '5-otp',
-      from: 'Payment Gateway',
-      fromEmail: 'otp@payments.com',
-      subject: 'OTP to authorize your payment',
-      preview: 'Enter 907654 on the merchant page to authorize your payment of ₹2,499. Code is valid for 10 minutes.',
-      timestamp: new Date(Date.now() - 25 * 60 * 1000),
-      read: false,
-      category: 'OTP'
-    },
-    {
-      id: '5',
-      from: 'Support Team',
-      fromEmail: 'support@toai.com',
-      subject: 'Welcome to TOAI - Getting Started',
-      preview: 'Thank you for joining TOAI! We\'re excited to have you on board. Here are some tips to get you started...',
-      timestamp: new Date(Date.now() - 172800000),
-      read: true,
-      category: 'Internal'
-    },
-    {
-      id: '6',
-      from: 'Emma Wilson',
-      fromEmail: 'emma.wilson@creative.com',
-      subject: 'Design Feedback Request',
-      preview: 'Hi! I\'ve been working on a new design concept and would love to get your feedback. Could you take a look...',
-      timestamp: new Date(Date.now() - 259200000),
-      read: false,
-      category: 'Client'
-    },
-    {
-      id: '7',
-      from: 'David Park',
-      fromEmail: 'david.park@devteam.com',
-      subject: 'Code Review - Feature Branch',
-      preview: 'I\'ve pushed a new feature branch for review. The changes include authentication improvements and...',
-      timestamp: new Date(Date.now() - 345600000),
-      read: true,
-      category: 'Read'
-    },
-    {
-      id: '8',
-      from: 'Marketing Team',
-      fromEmail: 'marketing@company.com',
-      subject: 'Monthly Newsletter - December Highlights',
-      preview: 'Check out our December highlights including new product launches, customer success stories, and upcoming events...',
-      timestamp: new Date(Date.now() - 432000000),
-      read: true,
-      category: 'Others'
-    },
-    {
-      id: '9',
-      from: 'You',
-      fromEmail: 'you@toai.com',
-      subject: 'Sent Recap - Sprint Deliverables',
-      preview: 'Sharing the latest sprint deliverables and action items with the team for confirmation.',
-      timestamp: new Date(Date.now() - 1800000),
-      read: true,
-      category: 'Sent'
-    },
-  ])
+  // Helper to safely get Date object
+  const getDate = (date: Date | string) => {
+    return typeof date === 'string' ? new Date(date) : date
+  }
+  const [emails, setEmails] = useState<Email[]>([])
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   const [filter, setFilter] = useState<string>('all')
@@ -127,77 +23,62 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
   const [previewAttachedFiles, setPreviewAttachedFiles] = useState<File[]>([])
   const [emailBody, setEmailBody] = useState<string>('')
   const [previewContent, setPreviewContent] = useState<string>('')
-  const [knowledgeFiles, setKnowledgeFiles] = useState<File[]>([])
-  const [showKnowledgeModal, setShowKnowledgeModal] = useState(false)
-  const sentTemplates = [
-    {
-      id: 'finance-template',
-      tag: '[Finance]',
-      title: 'Monthly Vendor Performance',
-      description: '“Analyse this month’s purchases and rank vendors by margin, reliability, and delay...”'
-    },
-    {
-      id: 'sales-template',
-      tag: '[Sales]',
-      title: 'Deal Review Template',
-      description: '“Given this opportunity, suggest win strategy, risk, and missing stakeholders...”'
-    },
-    {
-      id: 'support-template',
-      tag: '[Support]',
-      title: 'Escalation Summary',
-      description: '“Summarise this conversation for L2 with root cause, attempted fix, and next steps...”'
-    }
-  ]
-  const followUpTemplates = [
-    {
-      id: 'product-demo',
-      tag: '[Product]',
-      title: 'Demo Follow-up',
-      description: '“Thanks for attending the demo. Here’s the recap and next steps we discussed...”',
-      deadline: 'Due in 2 days'
-    },
-    {
-      id: 'support-ticket',
-      tag: '[Support]',
-      title: 'Ticket Follow-up',
-      description: '“Checking in on your open ticket. Please confirm the fix or share new details...”',
-      deadline: 'Due tomorrow'
-    },
-    {
-      id: 'sales-touch',
-      tag: '[Sales]',
-      title: 'Touch-base Reminder',
-      description: '“Following up on our last conversation. Are you ready to proceed or need more info?”',
-      deadline: 'Due in 3 days'
-    }
-  ]
+  const sentTemplates: any[] = []
+
+  const followUpTemplates: any[] = []
+
   const chatTextareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewFileInputRef = useRef<HTMLInputElement>(null)
   const emailBodyRef = useRef<HTMLTextAreaElement>(null)
   const previewContentRef = useRef<HTMLTextAreaElement>(null)
-  const modalKnowledgeUploadRef = useRef<HTMLInputElement>(null)
 
-  const categoryFilteredEmails = filter === 'all'
-    ? emails
-    : emails.filter(email => email.category?.toLowerCase() === filter.toLowerCase())
+  // Fetch emails on mount
+  useEffect(() => {
+    const fetchEmails = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/emails?max_results=5`)
+        const data = await response.json()
+
+        if (data.success && data.emails && data.emails.length > 0) {
+          // Add fetched emails to the beginning of the list
+          setEmails((prev) => {
+            // Avoid duplicates based on ID
+            const newEmails = data.emails.filter((e: Email) => !prev.some((p) => p.id === e.id))
+            return [...newEmails, ...prev]
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch emails:', error)
+      }
+    }
+
+    fetchEmails()
+  }, [])
+
+  const categoryFilteredEmails =
+    filter === 'all'
+      ? emails
+      : emails.filter((email) => email.category?.toLowerCase() === filter.toLowerCase())
 
   const now = new Date()
   const dayInMs = 24 * 60 * 60 * 1000
 
-  const filteredEmails = categoryFilteredEmails.filter(email => {
+  const filteredEmails = categoryFilteredEmails.filter((email) => {
     if (dateFilter === 'all') return true
-    const diff = now.getTime() - email.timestamp.getTime()
+    // Convert to standard Date object for comparison
+    const emailDate = getDate(email.timestamp)
+    const diff = now.getTime() - emailDate.getTime()
     if (dateFilter === '7days') return diff <= 7 * dayInMs
     if (dateFilter === '15days') return diff <= 15 * dayInMs
     if (dateFilter === '30days') return diff <= 30 * dayInMs
     return true
   })
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
     const now = new Date()
-    const diff = now.getTime() - date.getTime()
+    const emailDate = getDate(date)
+    const diff = now.getTime() - emailDate.getTime()
     const hours = Math.floor(diff / 3600000)
     const days = Math.floor(diff / 86400000)
 
@@ -205,7 +86,7 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
     if (hours < 24) return `${hours}h ago`
     if (days === 1) return 'Yesterday'
     if (days < 7) return `${days}d ago`
-    return date.toLocaleDateString()
+    return getDate(date).toLocaleDateString()
   }
 
   const categories = ['all', 'Internal', 'Client', 'OTP', 'Read', 'Sent', 'Follow up', 'Others']
@@ -223,14 +104,116 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
     e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`
   }
 
-  const handleChatSend = () => {
-    if (chatInput.trim()) {
-      // Handle chat message send
-      console.log('Chat message:', chatInput)
-      setChatInput('')
-      if (chatTextareaRef.current) {
-        chatTextareaRef.current.style.height = 'auto'
+  const handleGenerateReply = async (
+    originalBody: string,
+    prompt: string | null,
+    fileContext?: string,
+  ) => {
+    setIsGenerating(true)
+    try {
+      if (!selectedEmail) return
+
+      const response = await fetch(`${API_BASE}/api/email/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          original_body: originalBody,
+          original_sender: selectedEmail.from,
+          original_subject: selectedEmail.subject,
+          user_prompt: prompt,
+          file_context: fileContext || null,
+        }),
+      })
+      const data = await response.json()
+      if (data.success && data.reply) {
+        setPreviewContent(data.reply)
       }
+    } catch (error) {
+      console.error('Error generating reply:', error)
+      setPreviewContent('Error generating reply. Please try again.')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleSendEmail = async () => {
+    if (!selectedEmail) return
+
+    // Determine recipient - assuming direct reply to sender
+    const to = selectedEmail.fromEmail
+
+    // Determine Subject - basic Re:
+    const subject = selectedEmail.subject.startsWith('Re:')
+      ? selectedEmail.subject
+      : `Re: ${selectedEmail.subject}`
+
+    try {
+      // Debug logging
+      console.log('[EmailManager] Sending reply with:', {
+        to: to,
+        subject: subject,
+        thread_id: selectedEmail.threadId,
+        message_id: selectedEmail.messageId,
+        email_id: selectedEmail.id,
+      })
+
+      const response = await fetch(`${API_BASE}/api/email/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: to,
+          subject: subject,
+          body: previewContent,
+          cc: null,
+          thread_id: selectedEmail.threadId, // Use the actual threadId from Gmail
+          message_id: selectedEmail.messageId, // For In-Reply-To header
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert('Email sent successfully!')
+        // Ideally close modal or clear selection
+      } else {
+        alert('Failed to send email: ' + (data.error || 'Unknown error'))
+      }
+    } catch (error) {
+      console.error('Error sending email:', error)
+      alert('Error sending email')
+    }
+  }
+
+  const handleChatSend = async () => {
+    if (!selectedEmail) return
+    if (!chatInput.trim() && attachedFiles.length === 0) return
+
+    // Read file contents if any
+    let fileContext = ''
+    if (attachedFiles.length > 0) {
+      const fileContents = await Promise.all(
+        attachedFiles.map(async (file) => {
+          try {
+            const text = await file.text()
+            return `--- Content from ${file.name} ---\n${text}\n`
+          } catch {
+            return `--- Could not read ${file.name} ---\n`
+          }
+        }),
+      )
+      fileContext = fileContents.join('\n')
+    }
+
+    // Use chat input as prompt to refine reply with file context
+    handleGenerateReply(
+      selectedEmail.body || selectedEmail.preview,
+      chatInput.trim() || 'Generate a professional reply using the attached document context.',
+      fileContext || undefined,
+    )
+
+    // Clear inputs
+    setChatInput('')
+    setAttachedFiles([])
+    if (chatTextareaRef.current) {
+      chatTextareaRef.current.style.height = 'auto'
     }
   }
 
@@ -249,7 +232,7 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
     const files = e.target.files
     if (files && files.length > 0) {
       const fileArray = Array.from(files)
-      setAttachedFiles(prev => [...prev, ...fileArray])
+      setAttachedFiles((prev) => [...prev, ...fileArray])
     }
     // Reset input so same file can be selected again
     if (fileInputRef.current) {
@@ -265,7 +248,7 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
     const files = e.target.files
     if (files && files.length > 0) {
       const fileArray = Array.from(files)
-      setPreviewAttachedFiles(prev => [...prev, ...fileArray])
+      setPreviewAttachedFiles((prev) => [...prev, ...fileArray])
     }
     if (previewFileInputRef.current) {
       previewFileInputRef.current.value = ''
@@ -273,45 +256,50 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
   }
 
   const handlePreviewFileRemove = (index: number) => {
-    setPreviewAttachedFiles(prev => prev.filter((_, i) => i !== index))
+    setPreviewAttachedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleRemoveFile = (index: number) => {
-    setAttachedFiles(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleModalKnowledgeUploadClick = () => {
-    modalKnowledgeUploadRef.current?.click()
-  }
-
-  const handleModalKnowledgeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files && files.length > 0) {
-      const pdfFiles = Array.from(files).filter(
-        (file) => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-      )
-      if (pdfFiles.length > 0) {
-        setKnowledgeFiles((prev) => [...prev, ...pdfFiles])
-      }
-    }
-    if (modalKnowledgeUploadRef.current) {
-      modalKnowledgeUploadRef.current.value = ''
-    }
-  }
-
-  const handleKnowledgeFileRemove = (index: number) => {
-    setKnowledgeFiles((prev) => prev.filter((_, i) => i !== index))
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   // Initialize email body when email is selected
   const handleEmailSelect = (email: Email) => {
     setSelectedEmail(email)
-    // Initialize email body with preview and Lorem ipsum content
-    const initialBody = `${email.preview}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nSed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.`
+    // Use actual email body if available, otherwise fallback to Lorem ipsum
+    const initialBody = email.body || `${email.preview}\n\nLorem ipsum dolor sit amet...`
     setEmailBody(initialBody)
-    // Initialize preview content with preview and Lorem ipsum content
-    const initialPreview = `${email.preview}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nSed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.`
-    setPreviewContent(initialPreview)
+    // Initial generated reply
+    // Pass empty prompt to get default Reply
+    // Needs to be async but we can just fire and forget or wrap
+    setPreviewContent('Generating reply...')
+
+    // We need to call handleGenerateReply here, but it relies on 'selectedEmail' state which might not be updated yet.
+    // Better to pass email params directly.
+    const generateInitial = async () => {
+      setIsGenerating(true)
+      try {
+        const response = await fetch(`${API_BASE}/api/email/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            original_body: email.body || email.preview,
+            original_sender: email.from,
+            original_subject: email.subject,
+            user_prompt: null,
+          }),
+        })
+        const data = await response.json()
+        if (data.success && data.reply) {
+          setPreviewContent(data.reply)
+        }
+      } catch (error) {
+        setPreviewContent('Error generating reply.')
+      } finally {
+        setIsGenerating(false)
+      }
+    }
+    generateInitial()
   }
 
   const handleDeleteEmail = (emailId: string) => {
@@ -327,40 +315,29 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
     <>
       {/* Main Email Manager View */}
       <div className="flex-1 flex flex-col h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      {/* Header */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-4 flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <div>
-            <h2 className="text-2xl font-bold text-gradient-toai">Email Manager</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              {filter === 'Sent'
-                ? `${sentTemplates.length} ${sentTemplates.length === 1 ? 'template' : 'templates'}`
-                : filter === 'Follow up'
-                ? `${followUpTemplates.length} ${followUpTemplates.length === 1 ? 'template' : 'templates'}`
-                : `${filteredEmails.length} ${filteredEmails.length === 1 ? 'email' : 'emails'}`}
-            </p>
+        {/* Header */}
+        <div className="border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-4 sm:px-6 py-4 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div>
+              <h2 className="text-2xl font-bold text-gradient-toai">Email Manager</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                {filter === 'Sent'
+                  ? `${sentTemplates.length} ${sentTemplates.length === 1 ? 'template' : 'templates'}`
+                  : filter === 'Follow up'
+                  ? `${followUpTemplates.length} ${followUpTemplates.length === 1 ? 'template' : 'templates'}`
+                  : `${filteredEmails.length} ${filteredEmails.length === 1 ? 'email' : 'emails'}`}
+              </p>
+            </div>
           </div>
         </div>
-
-        {/* Right side: only Knowledge Base button (opens popup) */}
-        <div className="flex items-center gap-2 bg-slate-100/80 dark:bg-slate-700/60 rounded-full p-1">
-          <button
-            type="button"
-            onClick={() => setShowKnowledgeModal(true)}
-            className="px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm"
-          >
-            Knowledge Base
-          </button>
-        </div>
-      </div>
 
       {/* Filters / Tabs Content - always show Emails view; Knowledge Base opens as popup only */}
       {/* Filters */}
@@ -856,141 +833,22 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                   </div>
                 </div>
 
-                    {/* Save Draft Button */}
+                    {/* Save Draft / Send Email Buttons */}
                     <div className="flex items-center justify-end gap-3">
                       <button className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
                         Save Draft
+                      </button>
+                      <button
+                        onClick={handleSendEmail}
+                        disabled={!selectedEmail || isGenerating}
+                        className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Send Email
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Knowledge Base "Add files" Popup */}
-      {showKnowledgeModal && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center px-3 sm:px-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"
-            onClick={() => setShowKnowledgeModal(false)}
-          />
-
-          {/* Modal */}
-          <div className="relative w-full max-w-3xl bg-gradient-to-br from-slate-50 via-blue-50/60 to-cyan-50/60 rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-slate-200 bg-white/80 backdrop-blur">
-              <h3 className="text-sm sm:text-base font-semibold text-slate-900">Knowledge Base</h3>
-              <button
-                type="button"
-                onClick={() => setShowKnowledgeModal(false)}
-                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
-                aria-label="Close"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="px-4 sm:px-6 py-8 bg-transparent">
-              {/* Hidden file input just for this modal */}
-              <input
-                ref={modalKnowledgeUploadRef}
-                type="file"
-                accept="application/pdf,.pdf"
-                multiple
-                className="hidden"
-                onChange={handleModalKnowledgeFileChange}
-              />
-
-              <div
-                className="rounded-2xl border border-dashed border-slate-200/90 bg-white/90 shadow-soft flex flex-col items-center justify-center text-center px-6 py-10 gap-4 cursor-pointer"
-                onClick={handleModalKnowledgeUploadClick}
-              >
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-md">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4 4m0 0l4-4m-4 4V4"
-                    />
-                  </svg>
-                </div>
-                <div className="space-y-1">
-                  <p className="inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600">
-                    Workspace knowledge for your website & business
-                  </p>
-                  <p className="text-sm sm:text-base font-semibold text-slate-900 mt-1">
-                    Add product docs, FAQs, pitch decks, and website content.
-                  </p>
-                  <p className="text-xs sm:text-sm text-slate-600">
-                    TOAI will use these files to answer questions about your brand, site, and customers.
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row items-center gap-3 mt-2">
-                  <button
-                    type="button"
-                    onClick={handleModalKnowledgeUploadClick}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-soft hover:shadow-lg hover:brightness-105 transition-all"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v12m0 0l-4-4m4 4l4-4M6 20h12"
-                      />
-                    </svg>
-                    Add files
-                  </button>
-                  <p className="text-[11px] text-slate-500">or drag &amp; drop website files here</p>
-                </div>
-              </div>
-
-              {knowledgeFiles.length > 0 && (
-                <div className="mt-5 rounded-2xl border border-slate-200 bg-white/90 p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-medium text-slate-900">
-                      Knowledge Base files ({knowledgeFiles.length})
-                    </p>
-                    <p className="text-[11px] text-slate-500">Stored only for this workspace.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                    {knowledgeFiles.map((file, index) => (
-                      <span
-                        key={`${file.name}-${index}`}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 text-xs text-slate-800 border border-slate-200"
-                      >
-                        <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 2H8a2 2 0 00-2 2v16a2 2 0 002 2h8a2 2 0 002-2V8l-6-6z"
-                          />
-                        </svg>
-                        <span className="truncate max-w-[160px] sm:max-w-[220px]">{file.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleKnowledgeFileRemove(index)}
-                          className="text-slate-400 hover:text-red-500 transition-colors"
-                          title="Remove"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

@@ -3,6 +3,15 @@ import MessageBubble from './MessageBubble'
 import ChatInput from './ChatInput'
 import TypingIndicator from './TypingIndicator'
 import { Message } from '../types'
+import {
+  connectWhatsApp,
+  getWhatsAppLoginStatus,
+  scrapeWhatsAppGroups,
+  getWhatsAppQr,
+  getWhatsAppGroups,
+  getGoogleAuthUrl,
+  syncGoogleDriveAndEmail,
+} from '../backendClient'
 
 interface ChatInterfaceProps {
   messages: Message[]
@@ -18,6 +27,15 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
   const [whatsAppStage, setWhatsAppStage] = useState<'scan' | 'groups'>('scan')
   const [selectedGroups, setSelectedGroups] = useState<string[]>([])
   const [groupSearch, setGroupSearch] = useState('')
+  const [whatsAppGroups, setWhatsAppGroups] = useState<string[]>([
+    'Sales Updates',
+    'Support Escalations',
+    'Management Daily',
+    'Project Alpha Squad',
+    'Vendors & Partners',
+  ])
+  const [whatsAppQr, setWhatsAppQr] = useState<string | null>(null)
+  const [isGoogleConnecting, setIsGoogleConnecting] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const integrationIcons = [
@@ -52,6 +70,8 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
         ...prev,
         [id]: true,
       }))
+      // Start WhatsApp connection in the backend (non-blocking)
+      connectWhatsApp()
       return
     }
 
@@ -88,13 +108,47 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
     }))
   }
 
-  const whatsAppGroups = [
-    'Sales Updates',
-    'Support Escalations',
-    'Management Daily',
-    'Project Alpha Squad',
-    'Vendors & Partners',
-  ]
+  const handleGoogleConnect = async (source: 'drive' | 'email') => {
+    if (isGoogleConnecting) return
+    setIsGoogleConnecting(true)
+
+    try {
+      const authUrl = await getGoogleAuthUrl()
+      if (!authUrl || typeof window === 'undefined') {
+        setIsGoogleConnecting(false)
+        return
+      }
+
+      const popup = window.open(authUrl, 'googleAuth', 'width=600,height=700')
+
+      const listener = async (event: MessageEvent) => {
+        const data = event.data as any
+        if (!data || data.type !== 'google_auth_success') return
+
+        window.removeEventListener('message', listener)
+
+        try {
+          const accessToken = data.access_token as string
+          const credentials = data.credentials as Record<string, any>
+          if (accessToken && credentials) {
+            await syncGoogleDriveAndEmail(accessToken, credentials)
+          }
+        } catch (err) {
+          console.error('Error syncing Google Drive / Gmail:', err)
+        } finally {
+          setIsGoogleConnecting(false)
+          if (popup && !popup.closed) {
+            popup.close()
+          }
+        }
+      }
+
+      window.addEventListener('message', listener)
+    } catch (err) {
+      console.error('Failed to start Google connection:', err)
+      setIsGoogleConnecting(false)
+    }
+  }
 
   const toggleGroupSelection = (group: string) => {
     setSelectedGroups((prev) =>
@@ -125,12 +179,76 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
     })
   }
 
-  const handleConnectSelected = () => {
+  const handleConnectSelected = async () => {
     if (!selectedGroups.length) return
-    // Placeholder for actual connect logic
-    console.log('Connecting groups:', selectedGroups)
+    // Trigger backend scrape for selected WhatsApp groups; results are loaded into RAG
+    await scrapeWhatsAppGroups(selectedGroups)
     handleCloseWhatsApp()
   }
+
+  // Poll WhatsApp login status while QR scan stage is visible
+  useEffect(() => {
+    if (!showWhatsAppModal || whatsAppStage !== 'scan') return
+
+    let cancelled = false
+    const interval = setInterval(async () => {
+      if (cancelled) return
+      const loggedIn = await getWhatsAppLoginStatus()
+      if (loggedIn && !cancelled) {
+        setWhatsAppStage('groups')
+      }
+    }, 3000)
+
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [showWhatsAppModal, whatsAppStage])
+
+  // Load real WhatsApp groups from backend when groups stage is active
+  useEffect(() => {
+    if (!showWhatsAppModal || whatsAppStage !== 'groups') return
+
+    let cancelled = false
+
+    const loadGroups = async () => {
+      const groups = await getWhatsAppGroups()
+      if (!cancelled && groups.length) {
+        setWhatsAppGroups(groups)
+      }
+    }
+
+    loadGroups()
+
+    return () => {
+      cancelled = true
+    }
+  }, [showWhatsAppModal, whatsAppStage])
+
+  // Fetch WhatsApp QR code periodically while on scan stage
+  useEffect(() => {
+    if (!showWhatsAppModal || whatsAppStage !== 'scan') {
+      setWhatsAppQr(null)
+      return
+    }
+
+    let cancelled = false
+
+    const loadQr = async () => {
+      const qr = await getWhatsAppQr()
+      if (!cancelled) {
+        setWhatsAppQr(qr)
+      }
+    }
+
+    loadQr()
+    const interval = setInterval(loadQr, 5000)
+
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [showWhatsAppModal, whatsAppStage])
 
   const isWelcome = messages.length === 0
 
@@ -342,28 +460,46 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
                 <div className="flex flex-col md:flex-row gap-6 items-center md:items-stretch">
                   {/* QR Preview / Scanner Placeholder */}
                   <div className="flex-1 flex items-center justify-center">
-                    <div className="relative w-56 h-56 rounded-2xl bg-white dark:bg-slate-900 border border-dashed border-emerald-400/70 flex items-center justify-center shadow-inner">
+                    <div className="relative w-56 h-56 rounded-2xl bg-white dark:bg-slate-900 border border-dashed border-emerald-400/70 flex items-center justify-center shadow-inner overflow-hidden">
                       <div className="absolute inset-3 rounded-xl border-2 border-emerald-400/70 pointer-events-none" />
-                      <div className="relative z-10 text-center">
-                        <svg
-                          className="w-16 h-16 mx-auto text-slate-400 dark:text-slate-500"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M4 5h4M5 4v4M4 19h4M5 16v4M16 4h4M19 4v4M16 20h4M19 16v4M9 9h1v1H9zM12 9h1v1h-1zM15 9h1v1h-1zM9 12h1v1H9zM12 12h1v1h-1zM15 12h1v1h-1zM9 15h1v1H9zM12 15h1v1h-1zM15 15h1v1h-1z"
-                          />
-                        </svg>
-                        <p className="mt-3 text-xs font-medium text-slate-600 dark:text-slate-300">
-                          QR scanner preview
-                        </p>
-                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                          Open WhatsApp &gt; Linked devices &gt; Scan this code.
-                        </p>
+                      <div className="relative z-10 text-center px-2">
+                        {whatsAppQr ? (
+                          <>
+                            <img
+                              src={`data:image/png;base64,${whatsAppQr}`}
+                              alt="WhatsApp QR code"
+                              className="w-40 h-40 mx-auto object-contain"
+                            />
+                            <p className="mt-3 text-xs font-medium text-slate-600 dark:text-slate-300">
+                              Scan this QR code with WhatsApp
+                            </p>
+                            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                              Open WhatsApp &gt; Linked devices &gt; Link a device.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="w-16 h-16 mx-auto text-slate-400 dark:text-slate-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M4 5h4M5 4v4M4 19h4M5 16v4M16 4h4M19 4v4M16 20h4M19 16v4M9 9h1v1H9zM12 9h1v1h-1zM15 9h1v1h-1zM9 12h1v1H9zM12 12h1v1h-1zM15 12h1v1h-1zM9 15h1v1H9zM12 15h1v1h-1zM15 15h1v1h-1z"
+                              />
+                            </svg>
+                            <p className="mt-3 text-xs font-medium text-slate-600 dark:text-slate-300">
+                              QR scanner preview
+                            </p>
+                            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                              Open WhatsApp &gt; Linked devices &gt; Scan this code.
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -545,6 +681,7 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
               <div className="space-y-3">
                 <button
                   type="button"
+                  onClick={() => handleGoogleConnect('drive')}
                   className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-500 hover:shadow-md transition-all"
                 >
                   <div className="flex items-center gap-3">
@@ -571,6 +708,7 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
 
                 <button
                   type="button"
+                  onClick={() => handleGoogleConnect('email')}
                   className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-500 hover:shadow-md transition-all"
                 >
                   <div className="flex items-center gap-3">

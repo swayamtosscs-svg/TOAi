@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { loginUser, registerUser } from '../api'
 
 interface AuthProps {
   onAuthenticated: () => void
@@ -13,7 +14,7 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
@@ -35,12 +36,22 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
 
     setIsSubmitting(true)
 
-    // Fake API delay
-    setTimeout(() => {
-      localStorage.setItem('isAuthenticated', 'true')
+    try {
+      if (mode === 'login') {
+        await loginUser(email.trim(), password.trim())
+      } else {
+        await registerUser(name.trim(), email.trim(), password.trim())
+      }
+
       setIsSubmitting(false)
       onAuthenticated()
-    }, 700)
+    } catch (err) {
+      console.error(err)
+      const message =
+        err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+      setError(message)
+      setIsSubmitting(false)
+    }
   }
 
   return (

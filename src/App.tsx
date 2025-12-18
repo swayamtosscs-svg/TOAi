@@ -7,6 +7,8 @@ import Settings from './components/Settings'
 import Logo from './components/Logo'
 import Auth from './components/Auth'
 import { Message, Project } from './types'
+import { clearAuth, logChatMessage, fetchMessagesBySession } from './api'
+import { backendChat } from './backendClient'
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -19,7 +21,9 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('isAuthenticated') === 'true'
+    const hasFlag = localStorage.getItem('isAuthenticated') === 'true'
+    const hasToken = !!localStorage.getItem('authToken')
+    return hasFlag || hasToken
   })
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
@@ -43,13 +47,17 @@ function App() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated')
+    clearAuth()
     setIsAuthenticated(false)
     setShowSettings(false)
     setIsSidebarOpenMobile(false)
   }
 
-  const handleSendMessage = (content: string) => {
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => `session-${Date.now()}`)
+
+  const handleSendMessage = async (content: string) => {
+    const sessionId = currentSessionId || selectedProjectId || 'default-session'
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -57,18 +65,51 @@ function App() {
       timestamp: new Date(),
     }
     
-    setMessages(prev => [...prev, userMessage])
+    // Add user message immediately
+    setMessages((prev) => [...prev, userMessage])
+
+    // Best-effort: log user message to toai_message via Express API
+    logChatMessage({
+      session_id: sessionId,
+      sender_type: 'user',
+      message: content,
+    })
     
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const chatResult = await backendChat(content)
+
+      const aiText =
+        chatResult?.response?.trim() ||
+        "I'm having trouble generating a response right now, please try again."
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm TOAI, your AI assistant. How can I help you today?",
+        content: aiText,
         role: 'assistant',
         timestamp: new Date(),
       }
-      setMessages(prev => [...prev, aiMessage])
-    }, 1000)
+
+      setMessages((prev) => [...prev, aiMessage])
+
+      // Best-effort: log AI response to toai_message
+      logChatMessage({
+        session_id: sessionId,
+        sender_type: 'toai_ai',
+        message: aiText,
+      })
+    } catch (error) {
+      console.error('Error sending message to AI:', error)
+
+      const fallbackMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        content:
+          "I'm having trouble connecting to the AI service right now. Please make sure the backend server is running and try again.",
+        role: 'assistant',
+        timestamp: new Date(),
+      }
+
+      setMessages((prev) => [...prev, fallbackMessage])
+    }
   }
 
   const createProject = (name: string) => {
@@ -162,6 +203,7 @@ function App() {
                 setShowSavedPrompts(false)
                 setShowProjects(false)
                 setShowSettings(false)
+                setCurrentSessionId(`session-${Date.now()}`)
               }}
               onToggleDarkMode={toggleDarkMode}
               isDarkMode={isDarkMode}
@@ -203,6 +245,25 @@ function App() {
                 setShowSavedPrompts(false)
                 setShowProjects(false)
               }}
+              onOpenSession={async (sessionId) => {
+                try {
+                  const rows = await fetchMessagesBySession(sessionId, 200, 0)
+                  const mapped: Message[] = rows.map((row) => ({
+                    id: String(row.id),
+                    content: row.message,
+                    role: row.sender_type === 'toai_ai' ? 'assistant' : 'user',
+                    timestamp: new Date(row.created_at),
+                  }))
+                  setCurrentSessionId(sessionId)
+                  setMessages(mapped)
+                  setShowEmailManager(false)
+                  setShowSavedPrompts(false)
+                  setShowProjects(false)
+                  setShowSettings(false)
+                } catch (err) {
+                  console.error('Failed to load session messages:', err)
+                }
+              }}
             />
           </div>
         )}
@@ -220,6 +281,7 @@ function App() {
                   setShowProjects(false)
                   setShowSettings(false)
                   setIsSidebarOpenMobile(false)
+                  setCurrentSessionId(`session-${Date.now()}`)
                 }}
                 onToggleDarkMode={toggleDarkMode}
                 isDarkMode={isDarkMode}
@@ -266,6 +328,26 @@ function App() {
                   setShowSavedPrompts(false)
                   setShowProjects(false)
                   setIsSidebarOpenMobile(false)
+                }}
+                onOpenSession={async (sessionId) => {
+                  try {
+                    const rows = await fetchMessagesBySession(sessionId, 200, 0)
+                    const mapped: Message[] = rows.map((row) => ({
+                      id: String(row.id),
+                      content: row.message,
+                      role: row.sender_type === 'toai_ai' ? 'assistant' : 'user',
+                      timestamp: new Date(row.created_at),
+                    }))
+                    setCurrentSessionId(sessionId)
+                    setMessages(mapped)
+                    setShowEmailManager(false)
+                    setShowSavedPrompts(false)
+                    setShowProjects(false)
+                    setShowSettings(false)
+                    setIsSidebarOpenMobile(false)
+                  } catch (err) {
+                    console.error('Failed to load session messages:', err)
+                  }
                 }}
               />
             </div>

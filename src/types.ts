@@ -25,4 +25,8 @@ export interface Email {
   timestamp: Date
   read: boolean
   category?: string
+  body?: string
+  summary?: string
+  threadId?: string
+  messageId?: string
 }

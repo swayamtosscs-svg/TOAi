@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { listUserSaves, UserSave } from '../api'
 
 interface SavedPromptsProps {
   onClose: () => void
@@ -11,27 +12,12 @@ interface Prompt {
   owner: string
   lastRun: string
   tags: string[]
+  scope?: string | null
+  promptTemplate?: string | null
 }
 
 const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
-  const [prompts] = useState<Prompt[]>([
-    {
-      id: '1',
-      title: 'Weekly Sales Summary + Email',
-      description: 'Fetch sales for region and draft email to regional heads.',
-      owner: 'Anita',
-      lastRun: '2025-12-10',
-      tags: ['sales', 'weekly']
-    },
-    {
-      id: '2',
-      title: 'Invoice Validate & Recommend',
-      description: 'Validate invoice against PO and recommend action.',
-      owner: 'Rahul',
-      lastRun: '2025-12-09',
-      tags: ['finance', 'invoice']
-    }
-  ])
+  const [prompts, setPrompts] = useState<Prompt[]>([])
 
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState({
@@ -39,6 +25,45 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
     teamPrompts: false,
     favorites: false
   })
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [activePrompt, setActivePrompt] = useState<Prompt | null>(null)
+  const [scheduleName, setScheduleName] = useState('')
+  const [scheduleDescription, setScheduleDescription] = useState('')
+  const [scheduleTags, setScheduleTags] = useState('')
+  const [scheduleScope, setScheduleScope] = useState('')
+  const [scheduleTemplate, setScheduleTemplate] = useState('')
+
+  useEffect(() => {
+    const loadSaves = async () => {
+      const items = await listUserSaves({ limit: 100, offset: 0 })
+      const ownerEmail = localStorage.getItem('authEmail') || 'You'
+      const mapped: Prompt[] = items.map((s: UserSave) => ({
+        id: String(s.id),
+        title: s.name || 'Untitled prompt',
+        description: s.description || '',
+        owner: ownerEmail,
+        lastRun: s.created_at ? new Date(s.created_at).toLocaleDateString() : '',
+        tags: (s.tags || '')
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0),
+        scope: s.scope,
+        promptTemplate: s.prompt_template,
+      }))
+      setPrompts(mapped)
+    }
+    void loadSaves()
+  }, [])
+
+  const openScheduleModal = (prompt: Prompt) => {
+    setActivePrompt(prompt)
+    setScheduleName(prompt.title)
+    setScheduleDescription(prompt.description)
+    setScheduleTags(prompt.tags.join(', '))
+    setScheduleScope(prompt.scope || '')
+    setScheduleTemplate(prompt.promptTemplate || prompt.description)
+    setShowScheduleModal(true)
+  }
 
   return (
   <div className="flex flex-col h-full max-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 overflow-y-auto">
@@ -251,7 +276,11 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
                     <button className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-white bg-green-500 hover:bg-green-600 transition-colors">
                       Run
                     </button>
-                    <button className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => openScheduleModal(prompt)}
+                      className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+                    >
                       Schedule
                     </button>
                     <button className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
@@ -264,9 +293,145 @@ const SavedPrompts = ({ onClose }: SavedPromptsProps) => {
           </div>
         </div>
       </div>
+      {/* Schedule Prompt Modal */}
+      {showScheduleModal && activePrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setShowScheduleModal(false)}
+          />
+
+          {/* Modal */}
+          <div className="relative w-full max-w-5xl max-h-[92vh] bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 rounded-3xl shadow-[0_22px_60px_rgba(15,23,42,0.45)] flex flex-col overflow-hidden border border-slate-200/80 dark:border-slate-700/80">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
+              <div className="space-y-1">
+                <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                  Schedule prompt
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                  Configure how this saved prompt should run and review the final text before automating it.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-300 transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
+              {/* Left: form */}
+              <div className="w-full md:w-1/2 border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-slate-800 px-5 py-4 space-y-4 bg-white/90 dark:bg-slate-900 min-h-0 overflow-y-auto">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={scheduleName}
+                    onChange={(e) => setScheduleName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={scheduleDescription}
+                    onChange={(e) => setScheduleDescription(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-sm text-slate-900 dark:text-slate-100 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Tags
+                  </label>
+                  <input
+                    type="text"
+                    value={scheduleTags}
+                    onChange={(e) => setScheduleTags(e.target.value)}
+                    placeholder="e.g. finance, weekly, sales"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Scope
+                  </label>
+                  <input
+                    type="text"
+                    value={scheduleScope}
+                    onChange={(e) => setScheduleScope(e.target.value)}
+                    placeholder="e.g. Weekly, Monthly, Specific project"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Prompt Template
+                  </label>
+                  <textarea
+                    value={scheduleTemplate}
+                    onChange={(e) => setScheduleTemplate(e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-sm text-slate-900 dark:text-slate-100 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                    placeholder="Write your prompt template. Use placeholders like {{date}} or {{client_name}} where needed."
+                  />
+                </div>
+              </div>
+
+              {/* Right: preview */}
+              <div className="w-full md:w-1/2 p-5 bg-gradient-to-b from-slate-50 via-slate-50 to-slate-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 flex flex-col min-h-0 overflow-y-auto">
+                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                  Preview
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    Read-only
+                  </span>
+                </h3>
+                <div className="mt-3 flex-1 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 px-4 py-3 overflow-auto shadow-sm dark:shadow-[0_18px_40px_rgba(15,23,42,0.6)]">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 mb-2">
+                    {scheduleName || activePrompt.title}
+                  </p>
+                  <p className="text-sm leading-relaxed text-slate-800 dark:text-slate-100 whitespace-pre-line">
+                    {scheduleTemplate || activePrompt.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/95">
+              <button
+                type="button"
+                onClick={() => setShowScheduleModal(false)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-teal-500 via-sky-500 to-cyan-500 hover:brightness-110 shadow-soft dark:shadow-soft-dark transition-colors"
+              >
+                Save schedule
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 export default SavedPrompts
-
