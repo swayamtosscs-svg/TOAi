@@ -28,5 +28,17 @@ backend/
 !backend/drive-mail-connection.md
 !backend/requirements.txt
 !backend/run.py
+!backend/ai_engine/
+!backend/ai_engine/uploads/
+!backend/ai_engine/whatsapp_downloads/
+!backend/ai_engine/whatsapp_images/
+!backend/ai_engine/__init__.py
+!backend/ai_engine/app.py
+!backend/ai_engine/mcp_client.py
+!backend/ai_engine/mcp_server.py
+!backend/ai_engine/setup_auth.py
+!backend/ai_engine/text_extraction.py
+!backend/ai_engine/token.json
+!backend/ai_engine/whatsapp.py
 backend.zip
 
