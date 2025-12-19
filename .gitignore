@@ -23,6 +23,17 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+llama-groq-express/.env
+backend/ai_engine/.env
+
+# OAuth tokens and sensitive files
+backend/ai_engine/token.json
+**/token.json
+
 # Backend folder (exclude everything except specific files)
 backend/
 !backend/drive-mail-connection.md
@@ -38,7 +49,6 @@ backend/
 !backend/ai_engine/mcp_server.py
 !backend/ai_engine/setup_auth.py
 !backend/ai_engine/text_extraction.py
-!backend/ai_engine/token.json
 !backend/ai_engine/whatsapp.py
 backend.zip
 
