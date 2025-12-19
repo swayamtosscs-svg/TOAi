@@ -199,4 +199,52 @@ export const loginUser = async (req, res) => {
   }
 }
 
+// Google OAuth login
+export const loginWithGoogle = async (req, res) => {
+  try {
+    const { idToken, name, email } = req.body
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'email is required',
+      })
+    }
+
+    // Check if user exists
+    let user = await UserModel.findByEmail(email)
+
+    if (!user) {
+      // Create new user if doesn't exist
+      // For Google OAuth users, we don't have a password, so we'll set a random one
+      // In production, you might want to add a flag to indicate OAuth users
+      const randomPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12)
+      user = await UserModel.create({
+        name: name || email.split('@')[0],
+        email,
+        password: randomPassword,
+        role: 'user',
+        user_admin_id: null,
+        user_admin_email: null,
+      })
+    }
+
+    const token = createToken({ id: user.id, email: user.email, role: user.role, type: 'user' })
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user: sanitizeUser(user),
+        token,
+      },
+    })
+  } catch (error) {
+    console.error('Error in loginWithGoogle:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Internal server error',
+    })
+  }
+}
+
 

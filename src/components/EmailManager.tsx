@@ -332,241 +332,239 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                 {filter === 'Sent'
                   ? `${sentTemplates.length} ${sentTemplates.length === 1 ? 'template' : 'templates'}`
                   : filter === 'Follow up'
-                  ? `${followUpTemplates.length} ${followUpTemplates.length === 1 ? 'template' : 'templates'}`
-                  : `${filteredEmails.length} ${filteredEmails.length === 1 ? 'email' : 'emails'}`}
+                    ? `${followUpTemplates.length} ${followUpTemplates.length === 1 ? 'template' : 'templates'}`
+                    : `${filteredEmails.length} ${filteredEmails.length === 1 ? 'email' : 'emails'}`}
               </p>
             </div>
           </div>
         </div>
 
-      {/* Filters / Tabs Content - always show Emails view; Knowledge Base opens as popup only */}
-      {/* Filters */}
-          <div className="px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white/30 dark:bg-slate-800/30 backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2 flex-wrap">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setFilter(category)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      filter === category
-                        ? 'bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-soft dark:shadow-soft-dark'
-                        : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600'
-                    }`}
-                  >
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Date range dropdown */}
-                <div className="relative">
-                  <select
-                    value={dateFilter}
-                    onChange={(e) =>
-                      setDateFilter(e.target.value as 'all' | '7days' | '15days' | '30days')
-                    }
-                    className="appearance-none pl-3 pr-9 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 shadow-soft dark:shadow-soft-dark focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 dark:focus:ring-cyan-500/50 dark:focus:border-cyan-500"
-                  >
-                    <option value="all">All</option>
-                    <option value="7days">Last 7 days</option>
-                    <option value="15days">Last 15 days</option>
-                    <option value="30days">Last 1 month</option>
-                  </select>
-                  <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-500 dark:text-slate-300">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </span>
-                </div>
+        {/* Filters / Tabs Content - always show Emails view */}
+        {/* Filters */}
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white/30 dark:bg-slate-800/30 backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              {categories.map((category) => (
                 <button
-                  type="button"
-                  onClick={handleRefresh}
-                  className="flex items-center justify-center w-10 h-10 rounded-lg text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm"
-                  aria-label="Refresh"
-                  title="Refresh"
+                  key={category}
+                  onClick={() => setFilter(category)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === category
+                      ? 'bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-soft dark:shadow-soft-dark'
+                      : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600'
+                    }`}
                 >
-                  <img src="/download.png" alt="Refresh" className="w-6 h-6 object-contain" />
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
                 </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Date range dropdown */}
+              <div className="relative">
+                <select
+                  value={dateFilter}
+                  onChange={(e) =>
+                    setDateFilter(e.target.value as 'all' | '7days' | '15days' | '30days')
+                  }
+                  className="appearance-none pl-3 pr-9 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 shadow-soft dark:shadow-soft-dark focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 dark:focus:ring-cyan-500/50 dark:focus:border-cyan-500"
+                >
+                  <option value="all">All</option>
+                  <option value="7days">Last 7 days</option>
+                  <option value="15days">Last 15 days</option>
+                  <option value="30days">Last 1 month</option>
+                </select>
+                <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-500 dark:text-slate-300">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </span>
               </div>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                className="flex items-center justify-center w-10 h-10 rounded-lg text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm"
+                aria-label="Refresh"
+                title="Refresh"
+              >
+                <img src="/download.png" alt="Refresh" className="w-6 h-6 object-contain" />
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Email Grid */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
-            <div className="max-w-7xl mx-auto">
-              {filter === 'Sent' ? (
-            <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full px-2">
-              {sentTemplates.map((template) => (
-                <div
-                  key={template.id}
-                  className="flex items-center justify-between gap-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-4 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                      {template.tag} {template.title}
-                    </span>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                      {template.description}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                      title="Edit template"
-                    >
-                      View
-                    </button>
-                    <button
-                      type="button"
-                      className="px-4 py-2 rounded-lg bg-white border border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                      title="Use template"
-                    >
-                     Reply
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filter === 'Follow up' ? (
-            <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full px-2">
-              {followUpTemplates.map((template) => (
-                <div
-                  key={template.id}
-                  className="flex items-center justify-between gap-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-4 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                      {template.tag} {template.title}
-                    </span>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                      {template.description}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-200">
-                      {template.deadline}
-                    </span>
-                    <button
-                      type="button"
-                      className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                      title="Edit follow-up template"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="px-4 py-2 rounded-lg bg-white border border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                      title="Use follow-up template"
-                    >
-                      Use
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredEmails.map((email) => (
-                <div
-                  key={email.id}
-                  onClick={() => handleEmailSelect(email)}
-                  className={`relative group bg-white dark:bg-slate-800 rounded-xl p-5 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 cursor-pointer border-2 ${
-                    email.read
-                      ? 'border-transparent'
-                      : 'border-teal-500/50 dark:border-cyan-500/50'
-                  } hover:scale-[1.02]`}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                          {email.from.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                            {email.from}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                            {email.fromEmail}
-                          </p>
-                        </div>
-                      </div>
+        {/* Email Grid */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
+          <div className="max-w-7xl mx-auto">
+            {filter === 'Sent' ? (
+              <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full px-2">
+                {sentTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="flex items-center justify-between gap-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-4 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        {template.tag} {template.title}
+                      </span>
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
+                        {template.description}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {!email.read && (
-                        <div className="w-2 h-2 rounded-full bg-teal-500 flex-shrink-0 mt-1"></div>
-                      )}
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeleteEmail(email.id)
-                        }}
-                        className="p-1 rounded-lg text-slate-500 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0"
-                        title="Delete email"
+                        className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        title="Edit template"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        className="px-4 py-2 rounded-lg bg-white border border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        title="Use template"
+                      >
+                        Reply
                       </button>
                     </div>
                   </div>
-
-                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2 line-clamp-2">
-                    {email.subject}
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
-                    {email.preview}
-                  </p>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      {formatDate(email.timestamp)}
-                    </span>
-                    {email.category && (
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400">
-                        {email.category}
+                ))}
+              </div>
+            ) : filter === 'Follow up' ? (
+              <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full px-2">
+                {followUpTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="flex items-center justify-between gap-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-4 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        {template.tag} {template.title}
                       </span>
-                    )}
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
+                        {template.description}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-200">
+                        {template.deadline}
+                      </span>
+                      <button
+                        type="button"
+                        className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        title="Edit follow-up template"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="px-4 py-2 rounded-lg bg-white border border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        title="Use follow-up template"
+                      >
+                        Use
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredEmails.map((email) => (
+                  <div
+                    key={email.id}
+                    onClick={() => handleEmailSelect(email)}
+                    className={`relative group bg-white dark:bg-slate-800 rounded-xl p-5 shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 cursor-pointer border-2 ${email.read
+                        ? 'border-transparent'
+                        : 'border-teal-500/50 dark:border-cyan-500/50'
+                      } hover:scale-[1.02]`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                            {email.from.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                              {email.from}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                              {email.fromEmail}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!email.read && (
+                          <div className="w-2 h-2 rounded-full bg-teal-500 flex-shrink-0 mt-1"></div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteEmail(email.id)
+                          }}
+                          className="p-1 rounded-lg text-slate-500 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0"
+                          title="Delete email"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
 
-          {filter !== 'Sent' && filter !== 'Follow up' && filteredEmails.length === 0 && (
-            <div className="text-center py-20">
-              <svg className="w-16 h-16 mx-auto mb-4 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <p className="text-slate-600 dark:text-slate-400">No emails found in this category</p>
-            </div>
-          )}
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2 line-clamp-2">
+                      {email.subject}
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
+                      {email.preview}
+                    </p>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {formatDate(email.timestamp)}
+                      </span>
+                      {email.category && (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400">
+                          {email.category}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {filter !== 'Sent' && filter !== 'Follow up' && filteredEmails.length === 0 && (
+              <div className="text-center py-20">
+                <svg className="w-16 h-16 mx-auto mb-4 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <p className="text-slate-600 dark:text-slate-400">No emails found in this category</p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       </div>
 
       {/* Email Detail Popup/Modal */}
       {selectedEmail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 animate-fade-in">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"
             onClick={() => setSelectedEmail(null)}
           />
-          
+
           {/* Modal - Split View */}
           <div className="relative w-full max-w-7xl max-h-[90vh] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-y-auto animate-slide-up max-w-[95vw]">
             {/* Headers Row - Fixed */}
@@ -617,7 +615,7 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                         placeholder="Enter recipient email"
                       />
                     </div>
-                    
+
                     {/* CC Field */}
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -738,100 +736,100 @@ const EmailManager = ({ onClose }: EmailManagerProps) => {
                 {/* Chat Input Section - Fixed at Bottom */}
                 <div className="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0 sticky bottom-0 z-10">
                   <div className="px-6 py-4 space-y-3">
-                  {/* Attached Files Display */}
-                {attachedFiles.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {attachedFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm"
-                      >
-                        <span className="text-slate-700 dark:text-slate-300 truncate max-w-[150px]">
-                          {file.name}
-                        </span>
+                    {/* Attached Files Display */}
+                    {attachedFiles.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {attachedFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm"
+                          >
+                            <span className="text-slate-700 dark:text-slate-300 truncate max-w-[150px]">
+                              {file.name}
+                            </span>
+                            <button
+                              onClick={() => handleRemoveFile(index)}
+                              className="text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                              title="Remove file"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Chat Input with all buttons inside */}
+                    <div className="relative">
+                      {/* Hidden File Input */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        className="hidden"
+                        onChange={handleFileChange}
+                      />
+
+                      {/* Input Area with all buttons inside */}
+                      <div className="relative flex items-center rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-soft dark:shadow-soft-dark focus-within:ring-2 focus-within:ring-teal-500/50 focus-within:border-teal-500 dark:focus-within:ring-cyan-500/50 dark:focus-within:border-cyan-500 transition-all">
+                        {/* Save Prompt Button */}
                         <button
-                          onClick={() => handleRemoveFile(index)}
-                          className="text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                          title="Remove file"
+                          className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
+                          title="Save Prompt"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                          </svg>
+                        </button>
+
+                        {/* Attachment Button */}
+                        <button
+                          onClick={handleAttachClick}
+                          className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
+                          title="Attach file"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                          </svg>
+                        </button>
+
+                        {/* Textarea */}
+                        <textarea
+                          ref={chatTextareaRef}
+                          value={chatInput}
+                          onChange={handleChatInputChange}
+                          onKeyDown={handleChatKeyDown}
+                          rows={1}
+                          className="flex-1 px-3 py-3.5 bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 resize-none focus:outline-none text-[15px] leading-relaxed scrollbar-hide"
+                          placeholder="Ask TOAI…"
+                          style={{ minHeight: '52px', maxHeight: '200px' }}
+                        />
+
+                        {/* Voice Button */}
+                        <button
+                          className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
+                          title="Voice input"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                          </svg>
+                        </button>
+
+                        {/* Send Button */}
+                        <button
+                          onClick={handleChatSend}
+                          disabled={!chatInput.trim()}
+                          className="p-3 rounded-xl bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex-shrink-0 m-1"
+                          title="Send message"
+                        >
+                          <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                           </svg>
                         </button>
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Chat Input with all buttons inside */}
-                <div className="relative">
-                  {/* Hidden File Input */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-
-                  {/* Input Area with all buttons inside */}
-                  <div className="relative flex items-center rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-soft dark:shadow-soft-dark focus-within:ring-2 focus-within:ring-teal-500/50 focus-within:border-teal-500 dark:focus-within:ring-cyan-500/50 dark:focus-within:border-cyan-500 transition-all">
-                    {/* Save Prompt Button */}
-                    <button
-                      className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
-                      title="Save Prompt"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                      </svg>
-                    </button>
-
-                    {/* Attachment Button */}
-                    <button
-                      onClick={handleAttachClick}
-                      className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
-                      title="Attach file"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
-                    </button>
-
-                    {/* Textarea */}
-                    <textarea
-                      ref={chatTextareaRef}
-                      value={chatInput}
-                      onChange={handleChatInputChange}
-                      onKeyDown={handleChatKeyDown}
-                      rows={1}
-                      className="flex-1 px-3 py-3.5 bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 resize-none focus:outline-none text-[15px] leading-relaxed scrollbar-hide"
-                      placeholder="Ask TOAI…"
-                      style={{ minHeight: '52px', maxHeight: '200px' }}
-                    />
-                    
-                    {/* Voice Button */}
-                    <button
-                      className="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
-                      title="Voice input"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                      </svg>
-                    </button>
-
-                    {/* Send Button */}
-                    <button
-                      onClick={handleChatSend}
-                      disabled={!chatInput.trim()}
-                      className="p-3 rounded-xl bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white shadow-soft dark:shadow-soft-dark hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex-shrink-0 m-1"
-                      title="Send message"
-                    >
-                      <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+                    </div>
 
                     {/* Save Draft / Send Email Buttons */}
                     <div className="flex items-center justify-end gap-3">

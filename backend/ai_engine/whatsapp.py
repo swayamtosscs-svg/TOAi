@@ -278,28 +278,148 @@ class WhatsAppScraper:
         time.sleep(3)
         return True
 
-    def list_groups(self, limit: int = 50):
+    def list_groups(self, limit: int = 200):
         """
         List visible WhatsApp chats/groups from the left pane.
-        Returns a list of unique chat titles (group/contact names).
+        Scrolls through the chat list to load all contacts and groups.
+        Returns a list of unique chat titles (group/contact names only, not message previews).
         """
         if not self.driver:
             return []
 
         names = []
+        seen_titles = set()
+        
         try:
-            # Pane-side normally contains the chat list; look for title spans
-            elements = self.driver.find_elements(By.XPATH, '//div[@id="pane-side"]//span[@title]')
-            for elem in elements:
-                try:
-                    title = elem.get_attribute("title") or ""
-                    title = title.strip()
-                    if title and title not in names:
+            # Find the chat list pane
+            pane_side = None
+            try:
+                pane_side = self.driver.find_element(By.XPATH, '//div[@id="pane-side"]')
+            except Exception:
+                print("[WhatsApp] Could not find pane-side element")
+                return []
+            
+            print(f"[WhatsApp] Scrolling to load all chats (limit: {limit})...")
+            
+            # Scroll multiple times to load more chats
+            last_count = 0
+            no_change_count = 0
+            max_no_change = 3  # Stop after 3 scrolls with no new items
+            scroll_iteration = 0
+            max_scrolls = 20  # Maximum number of scroll attempts
+            
+            while scroll_iteration < max_scrolls and len(names) < limit:
+                # Get ALL span[@title] elements at once
+                all_title_spans = self.driver.find_elements(By.XPATH, '//div[@id="pane-side"]//span[@title]')
+                
+                # Group spans by their grandparent element (the chat row)
+                # Track which rows we've already extracted names from
+                processed_rows = set()
+                
+                for span in all_title_spans:
+                    try:
+                        title = span.get_attribute("title") or ""
+                        title = title.strip()
+                        
+                        if not title:
+                            continue
+                        
+                        # Get the parent row element to check if we've already processed this row
+                        # Go up several levels to find the row container
+                        try:
+                            # Try to get a unique identifier for this row
+                            row_element = span.find_element(By.XPATH, './ancestor::div[@role="listitem"]')
+                            row_id = row_element.id if row_element.id else None
+                        except Exception:
+                            try:
+                                # Alternative: go up to grandparent div
+                                row_element = span.find_element(By.XPATH, './ancestor::div[5]')
+                                row_id = row_element.id if row_element.id else str(row_element.location)
+                            except Exception:
+                                row_id = None
+                        
+                        # If we've already gotten a name from this row, skip (this is likely the message preview)
+                        if row_id and row_id in processed_rows:
+                            continue
+                        
+                        # Mark this row as processed
+                        if row_id:
+                            processed_rows.add(row_id)
+                        
+                        # Skip already seen titles
+                        if title in seen_titles:
+                            continue
+                        
+                        # Skip system entries
+                        if title.lower() in ['status', 'starred messages', 'archived', 'communities']:
+                            continue
+                        
+                        # Skip common message words
+                        single_word_messages = [
+                            'ok', 'okay', 'yes', 'no', 'hi', 'hello', 'hey', 'bye',
+                            'thanks', 'thank you', 'photo', 'video', 'audio',
+                            'document', 'sticker', 'gif', 'image', 'voice message',
+                            'deleted', 'removed', 'added', 'left', 'joined',
+                            'missed call', 'waiting for this message'
+                        ]
+                        
+                        if title.lower() in single_word_messages:
+                            continue
+                        
+                        # Skip system messages ending with action words
+                        if any(title.lower().endswith(ending) for ending in ['removed', 'added', 'left', 'joined']):
+                            continue
+                        
+                        # Skip phone action messages
+                        if title.startswith('+') and any(word in title.lower() for word in ['removed', 'added', 'left', 'joined']):
+                            continue
+                        
+                        # Skip very long text (likely a message preview that slipped through)
+                        if len(title) > 80:
+                            continue
+                        
+                        # Valid name found
+                        seen_titles.add(title)
                         names.append(title)
+                        
                         if len(names) >= limit:
                             break
-                except Exception:
-                    continue
+                            
+                    except Exception:
+                        continue
+                
+                # Check if we found new items
+                if len(names) == last_count:
+                    no_change_count += 1
+                    if no_change_count >= max_no_change:
+                        print(f"[WhatsApp] No new chats found after {no_change_count} scrolls, stopping")
+                        break
+                else:
+                    no_change_count = 0
+                    last_count = len(names)
+                
+                # Scroll down to load more chats
+                try:
+                    self.driver.execute_script(
+                        "arguments[0].scrollTop += 500;", 
+                        pane_side
+                    )
+                    time.sleep(0.5)  # Wait for new chats to load
+                except Exception as e:
+                    print(f"[WhatsApp] Scroll failed: {e}")
+                    break
+                
+                scroll_iteration += 1
+                print(f"[WhatsApp] Scroll {scroll_iteration}: Found {len(names)} chats so far...")
+            
+            # Scroll back to top
+            try:
+                self.driver.execute_script("arguments[0].scrollTop = 0;", pane_side)
+            except Exception:
+                pass
+            
+            print(f"[WhatsApp] Total chats/groups found: {len(names)}")
+            
         except Exception as e:
             print(f"Error listing WhatsApp groups: {e}")
 
@@ -316,210 +436,191 @@ class WhatsAppScraper:
         # Wait for chat to load
         time.sleep(2)
 
-        # Scroll to load messages - use SAME approach as download_images_and_ocr which finds more elements
+        # Scroll to load ALL messages - scroll up multiple times to load history
         try:
-            try:
-                chat_panel = self.driver.find_element(By.XPATH, '//div[@data-tab="6"]')
-            except:
-                chat_panel = self.driver.find_element(By.XPATH, '//div[@id="main"]')
+            # Find the scrollable message container
+            chat_panel = None
+            scroll_selectors = [
+                '//div[@id="main"]//div[contains(@class, "copyable-area")]/div[2]',  # Common message scroll container
+                '//div[@id="main"]//div[@data-tab="8"]',  # Alternative
+                '//div[@id="main"]//div[contains(@class, "_ajyl")]',  # Another possible class
+                '//div[@id="main"]',
+            ]
             
-            print("Scrolling to load messages (matching image extraction scroll)...")
-            for i in range(5):
-                self.driver.execute_script("arguments[0].scrollTop = arguments[0].scrollTop - 1000", chat_panel)
-                time.sleep(1)  # Increased from 0.5 to 1 second to match image extraction
-                print(f"  Scrolled {i+1}/5...")
+            for sel in scroll_selectors:
+                try:
+                    chat_panel = self.driver.find_element(By.XPATH, sel)
+                    if chat_panel:
+                        print(f"Found scroll container with selector: {sel[:50]}...")
+                        break
+                except:
+                    continue
             
-            time.sleep(2)  # Added extra wait to match image extraction
+            if chat_panel:
+                print("Scrolling to load all messages...")
+                # Scroll UP to load older messages - more aggressive scrolling
+                for i in range(10):
+                    self.driver.execute_script("arguments[0].scrollTop = 0", chat_panel)
+                    time.sleep(0.7)
+                    print(f"  Scrolled up {i+1}/10...")
+                
+                # Scroll back down to load everything
+                time.sleep(1)
+                self.driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", chat_panel)
+                time.sleep(2)
         except Exception as e:
             print(f"Scroll failed: {e}")
 
-        # Try multiple selector strategies
-        print("\n[DEBUG] Trying multiple message selectors...")
+        # DIRECT APPROACH: Find all divs with data-pre-plain-text attribute
+        # These contain the actual message text in WhatsApp Web
+        print("\n[DEBUG] Using direct message finding approach...")
         
-        # Strategy 1: Standard message containers
-        all_messages = self.driver.find_elements(By.XPATH, 
-            '//div[contains(@class, "message-in") or contains(@class, "message-out")] | '
-            '//div[@data-id]'
+        # Find all message text containers directly - they have data-pre-plain-text attribute
+        copyable_texts = self.driver.find_elements(By.XPATH, 
+            '//div[@id="main"]//div[@data-pre-plain-text]'
         )
-        print(f"[DEBUG] Strategy 1 (message-in/out | data-id): Found {len(all_messages)} elements")
+        print(f"[DEBUG] Found {len(copyable_texts)} elements with data-pre-plain-text")
         
-        # Strategy 2: Look for copyable-text directly
-        if len(all_messages) == 0:
-            all_messages = self.driver.find_elements(By.XPATH, 
-                '//div[@data-pre-plain-text]'
+        # If no copyable-text found, try alternative selectors
+        if len(copyable_texts) == 0:
+            # Try finding by copyable-text class
+            copyable_texts = self.driver.find_elements(By.XPATH, 
+                '//div[@id="main"]//div[contains(@class, "copyable-text")][@data-pre-plain-text]'
             )
-            print(f"[DEBUG] Strategy 2 (data-pre-plain-text): Found {len(all_messages)} elements")
+            print(f"[DEBUG] Fallback 1 (copyable-text class): Found {len(copyable_texts)} elements")
         
-        # Strategy 3: Look for focusable message divs
-        if len(all_messages) == 0:
-            all_messages = self.driver.find_elements(By.XPATH, 
-                '//div[@role="row"]//div[contains(@class, "focusable-list-item")]'
+        if len(copyable_texts) == 0:
+            # Try to find message rows and extract text
+            message_rows = self.driver.find_elements(By.XPATH,
+                '//div[@id="main"]//div[@role="row"]//div[contains(@class, "focusable-list-item")]'
             )
-            print(f"[DEBUG] Strategy 3 (focusable-list-item): Found {len(all_messages)} elements")
-        
-        # Strategy 4: Look for any div with selectable-text inside main
-        if len(all_messages) == 0:
-            all_messages = self.driver.find_elements(By.XPATH, 
-                '//div[@id="main"]//span[contains(@class, "selectable-text")]/..'
-            )
-            print(f"[DEBUG] Strategy 4 (selectable-text parent): Found {len(all_messages)} elements")
-        
-        # Strategy 5: Look for chat bubbles by common patterns
-        if len(all_messages) == 0:
-            all_messages = self.driver.find_elements(By.CSS_SELECTOR, 
-                '#main [data-id]'
-            )
-            print(f"[DEBUG] Strategy 5 (CSS #main [data-id]): Found {len(all_messages)} elements")
-        
-        print(f"\nTotal message containers found: {len(all_messages)}")
+            print(f"[DEBUG] Fallback 2 (message rows): Found {len(message_rows)} elements")
+            
+            for row in message_rows:
+                try:
+                    # Look for pre-plain-text within this row
+                    inner_copyable = row.find_elements(By.XPATH, './/div[@data-pre-plain-text]')
+                    copyable_texts.extend(inner_copyable)
+                except:
+                    continue
+            print(f"[DEBUG] After row extraction: Found {len(copyable_texts)} elements")
 
-        if not all_messages:
-            print("\n[DEBUG] No message containers found with ANY strategy!")
-            print("[DEBUG] Attempting to dump page structure...")
+        print(f"\nTotal message elements found: {len(copyable_texts)}")
+
+        if not copyable_texts:
+            print("\n[DEBUG] No message elements found!")
+            print("[DEBUG] Attempting to analyze page structure...")
             try:
                 main_div = self.driver.find_element(By.XPATH, '//div[@id="main"]')
                 print(f"[DEBUG] Main div found: {main_div.get_attribute('class')}")
-                children = main_div.find_elements(By.XPATH, './div')
-                print(f"[DEBUG] Main div has {len(children)} direct children")
-                for i, child in enumerate(children[:5]):
-                    cls = child.get_attribute('class') or 'no-class'
-                    print(f"[DEBUG]   Child {i}: class='{cls[:50]}...'")
+                
+                # Look for any text content
+                all_spans = main_div.find_elements(By.XPATH, './/span[contains(@class, "selectable-text")]')
+                print(f"[DEBUG] Found {len(all_spans)} selectable-text spans")
+                
+                # Try extracting from selectable-text spans directly
+                for span in all_spans:
+                    try:
+                        text = span.text.strip() if span.text else ""
+                        if text and len(text) > 3:
+                            # Skip file names
+                            if not any(ext in text.lower() for ext in ['.pdf', '.jpg', '.png', '.doc']):
+                                messages.append({
+                                    "sender": "Unknown",
+                                    "timestamp": "",
+                                    "text": text,
+                                })
+                    except:
+                        continue
+                        
+                if messages:
+                    print(f"[DEBUG] Extracted {len(messages)} messages from selectable-text fallback")
+                    return messages
+                    
             except Exception as e:
                 print(f"[DEBUG] Could not analyze page structure: {e}")
             return messages
 
         processed_texts = set()
 
-        for idx, msg_container in enumerate(all_messages):
+        for idx, copyable in enumerate(copyable_texts):
             try:
-                # Debug: Show what each container contains
-                container_class = msg_container.get_attribute('class') or 'no-class'
-                container_html_snippet = msg_container.get_attribute('innerHTML')[:200] if msg_container.get_attribute('innerHTML') else 'empty'
-                print(f"\n[DEBUG] Container {idx}: class='{container_class[:80]}'")
+                # Get sender and timestamp from data-pre-plain-text
+                pre_text = copyable.get_attribute("data-pre-plain-text") or ""
                 
-                # Check if it has images (might be image-only message)
-                has_images = len(msg_container.find_elements(By.XPATH, './/img')) > 0
-                has_document = len(msg_container.find_elements(By.XPATH, './/span[contains(text(), ".pdf") or contains(text(), ".jpg") or contains(text(), ".png")]')) > 0
+                print(f"\n[DEBUG] Message {idx}: pre_text = '{pre_text[:80] if pre_text else 'empty'}...'")
                 
-                if has_images:
-                    print(f"[DEBUG]   → Contains images (likely image message, skipping text extraction)")
-                if has_document:
-                    print(f"[DEBUG]   → Contains document reference")
+                timestamp = ""
+                sender_name = "Unknown"
                 
-                # Look for text content in this message
-                # First, try to find the copyable-text div which contains actual text messages
-                copyable_divs = msg_container.find_elements(By.XPATH, 
-                    './/div[contains(@class, "copyable-text")][@data-pre-plain-text]'
+                if pre_text and "]" in pre_text:
+                    # Format is like "[12:00 PM, 12/16/2024] Sender Name: "
+                    timestamp = pre_text.split("]")[0].replace("[", "").strip()
+                    sender_part = pre_text.split("]")[1] if len(pre_text.split("]")) > 1 else ""
+                    sender_name = sender_part.strip().rstrip(":").strip()
+                    if not sender_name:
+                        sender_name = "You"  # Your own messages might not have sender
+                
+                # Get the actual message text from spans inside this div
+                text_elements = copyable.find_elements(By.XPATH, 
+                    './/span[contains(@class, "selectable-text")]//span | '
+                    './/span[@dir="ltr"] | '
+                    './/span[@dir="auto"]'
                 )
-                print(f"[DEBUG]   → Found {len(copyable_divs)} copyable-text divs with data-pre-plain-text")
                 
-                if not copyable_divs:
-                    # Try alternative: look for any div with data-pre-plain-text
-                    copyable_divs = msg_container.find_elements(By.XPATH, 
-                        './/div[@data-pre-plain-text]'
-                    )
-                    print(f"[DEBUG]   → Found {len(copyable_divs)} divs with data-pre-plain-text (fallback)")
+                print(f"[DEBUG]   → Found {len(text_elements)} text elements")
                 
-                for copyable in copyable_divs:
+                message_text = ""
+                for elem in text_elements:
                     try:
-                        # Get sender and timestamp from data-pre-plain-text
-                        pre_text = copyable.get_attribute("data-pre-plain-text") or ""
-                        
-                        timestamp = ""
-                        sender_name = "Unknown"
-                        
-                        if pre_text and "]" in pre_text:
-                            # Format is like "[12:00 PM, 12/16/2024] Sender Name: "
-                            timestamp = pre_text.split("]")[0].replace("[", "").strip()
-                            sender_part = pre_text.split("]")[1] if len(pre_text.split("]")) > 1 else ""
-                            sender_name = sender_part.strip().rstrip(":").strip()
-                            if not sender_name:
-                                sender_name = "You"  # Your own messages might not have sender
-                        
-                        # Get the actual message text from spans
-                        text_elements = copyable.find_elements(By.XPATH, 
-                            './/span[contains(@class, "selectable-text")]//span | '
-                            './/span[@dir="ltr"] | '
-                            './/span[@dir="auto"]'
-                        )
-                        
-                        message_text = ""
-                        for elem in text_elements:
-                            try:
-                                if elem.text and elem.text.strip():
-                                    message_text = elem.text.strip()
-                                    break
-                            except:
-                                continue
-                        
-                        # Skip if no text or if it looks like a file name
-                        if not message_text:
-                            continue
-                        
-                        # Skip file attachment notifications
-                        if any(ext in message_text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.mp4', '.webp']):
-                            if len(message_text) < 50:  # File names are usually short
-                                continue
-                        
-                        # Create unique key
-                        text_key = f"{sender_name}:{message_text}"
-                        if text_key in processed_texts:
-                            continue
-                        processed_texts.add(text_key)
-                        
-                        messages.append({
-                            "sender": sender_name,
-                            "timestamp": timestamp,
-                            "text": message_text,
-                        })
-                        print(f"  Found message: [{sender_name}]: {message_text[:60]}...")
-                        
-                    except Exception as e:
+                        if elem.text and elem.text.strip():
+                            message_text = elem.text.strip()
+                            break
+                    except:
                         continue
                 
-                # Also check for outgoing messages (your own messages)
-                # These might have different structure
-                if not copyable_divs:
-                    # Check if this is an outgoing message
-                    element_class = msg_container.get_attribute("class") or ""
-                    is_outgoing = "message-out" in element_class
-                    
-                    # Try to get text from any selectable-text span
-                    text_spans = msg_container.find_elements(By.XPATH,
-                        './/span[contains(@class, "selectable-text")]//span'
-                    )
-                    
-                    message_text = ""
-                    for span in text_spans:
-                        try:
-                            if span.text and span.text.strip():
-                                text = span.text.strip()
-                                # Skip if it looks like a file name
-                                if not any(ext in text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc']):
-                                    message_text = text
-                                    break
-                        except:
-                            continue
-                    
-                    if message_text:
-                        sender_name = "You" if is_outgoing else "Unknown"
-                        text_key = f"{sender_name}:{message_text}"
-                        if text_key not in processed_texts:
-                            processed_texts.add(text_key)
-                            messages.append({
-                                "sender": sender_name,
-                                "timestamp": "",
-                                "text": message_text,
-                            })
-                            print(f"  Found message: [{sender_name}]: {message_text[:60]}...")
+                # If no text found with spans, try getting innerText directly
+                if not message_text:
+                    try:
+                        inner_text = copyable.get_attribute("innerText") or ""
+                        # The innerText might include metadata, try to clean it
+                        if inner_text and len(inner_text.strip()) > 0:
+                            message_text = inner_text.strip().split('\n')[0].strip()
+                    except:
+                        pass
+                
+                # Skip if no text
+                if not message_text:
+                    print(f"[DEBUG]   → No text found, skipping")
+                    continue
+                
+                # Skip file attachment notifications (but allow longer messages that mention files)
+                if any(ext in message_text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.mp4', '.webp']):
+                    if len(message_text) < 50:  # File names are usually short
+                        print(f"[DEBUG]   → Skipping file attachment: {message_text[:30]}")
+                        continue
+                
+                # Create unique key to avoid duplicates
+                text_key = f"{timestamp}:{sender_name}:{message_text}"
+                if text_key in processed_texts:
+                    print(f"[DEBUG]   → Duplicate, skipping")
+                    continue
+                processed_texts.add(text_key)
+                
+                messages.append({
+                    "sender": sender_name,
+                    "timestamp": timestamp,
+                    "text": message_text,
+                })
+                print(f"  ✓ Found message: [{timestamp}] {sender_name}: {message_text[:60]}...")
                 
             except Exception as e:
-                print(f"Error processing message {idx}: {e}")
+                print(f"[DEBUG] Error processing message {idx}: {e}")
                 continue
 
         print(f"\n==============================")
         print(f"Extracted {len(messages)} text messages")
-        print(f"==============================")
+        print("==============================")
         
         if messages:
             print("\nAll extracted messages:")
@@ -533,6 +634,7 @@ class WhatsAppScraper:
         Returns list of downloaded PDF file paths in download_dir.
         """
         pdf_paths = []
+        
         try:
             # Clear old PDFs so each scrape only tracks fresh downloads
             for old_pdf in glob.glob(os.path.join(self.download_dir, "*.pdf")):
@@ -540,134 +642,137 @@ class WhatsAppScraper:
                     os.remove(old_pdf)
                 except Exception:
                     pass
+            
             print("\n==============================")
             print("Searching for PDF files in chat...")
             print("==============================")
             
-            # Scroll through messages to load all documents
+            # Scroll through the chat to load all messages
+            print("Scrolling to load all messages...")
             try:
-                try:
-                    message_container = self.driver.find_element(
-                        By.XPATH, '//div[@class="_ajyl"]'
-                    )
-                except NoSuchElementException:
-                    message_container = self.driver.find_element(
-                        By.XPATH,
-                        '//div[contains(@class, "copyable-area")]//div[@role="application"]',
-                    )
+                # Find the message container
+                chat_container = None
+                container_selectors = [
+                    '//div[@data-tab="8"]',  # Main chat panel
+                    '//div[@id="main"]//div[contains(@class, "copyable-area")]',
+                    '//div[@id="main"]',
+                ]
                 
-                scroll_pause_time = 2
-                last_height = 0
-                no_change_count = 0
-                max_no_change = 3
-                
-                while no_change_count < max_no_change:
-                    current_height = self.driver.execute_script(
-                        "return arguments[0].scrollTop", message_container
-                    )
-                    self.driver.execute_script(
-                        "arguments[0].scrollTop = 0", message_container
-                    )
-                    time.sleep(scroll_pause_time)
-                    new_height = self.driver.execute_script(
-                        "return arguments[0].scrollTop", message_container
-                    )
-                    if abs(new_height - last_height) < 10:
-                        no_change_count += 1
-                    else:
-                        no_change_count = 0
-                    last_height = new_height
-                    self.driver.execute_script(
-                        "arguments[0].scrollTop = 100", message_container
-                    )
-                    time.sleep(0.5)
-                
-                self.driver.execute_script(
-                    "arguments[0].scrollTop = arguments[0].scrollHeight",
-                    message_container,
-                )
-                time.sleep(2)
-            except Exception:
-                pass
-            
-            # Comprehensive selectors for all PDF document types
-            file_selectors = [
-                # Standard document cards
-                '//div[@data-testid="media-document"]',
-                '//div[@data-testid="document-msg"]',
-                
-                # PDF icon containers
-                '//div[contains(@class, "document")]//span[contains(text(), ".pdf")]',
-                
-                # Message containers with PDF text
-                '//div[@data-testid="msg-container"]//span[contains(text(), ".pdf")]',
-                
-                # Direct PDF links
-                '//a[contains(@href, ".pdf")]',
-                
-                # Document preview cards (new WhatsApp UI)
-                '//div[@role="button"]//span[contains(text(), ".pdf")]',
-                
-                # Large document cards with preview
-                '//div[contains(@class, "_akbu")]//span[contains(text(), ".pdf")]',
-                
-                # Alternative document containers
-                '//div[contains(@class, "message-in")]//span[contains(text(), ".pdf")]',
-                '//div[contains(@class, "message-out")]//span[contains(text(), ".pdf")]',
-            ]
-            
-            pdf_elements = []
-            for selector in file_selectors:
-                try:
-                    elements = self.driver.find_elements(By.XPATH, selector)
-                    if elements:
-                        pdf_elements.extend(elements)
-                        print(f"Found {len(elements)} potential PDF elements with selector: {selector}")
-                except Exception:
-                    continue
-            
-            # Remove duplicates while preserving order
-            seen = set()
-            unique_pdf_elements = []
-            for elem in pdf_elements:
-                try:
-                    # Use the text content as identifier to avoid duplicates
-                    elem_text = elem.text
-                    if elem_text and ".pdf" in elem_text.lower():
-                        if elem_text not in seen:
-                            seen.add(elem_text)
-                            unique_pdf_elements.append(elem)
-                except Exception:
-                    continue
-            
-            print(f"Total unique PDF documents found: {len(unique_pdf_elements)}")
-            
-            pdf_count = 0
-            for pdf_elem in unique_pdf_elements:
-                try:
-                    # Extract PDF name first
-                    pdf_name = "unknown.pdf"
+                for sel in container_selectors:
                     try:
-                        # Try multiple methods to get the filename
-                        name_selectors = [
-                            './/span[contains(text(), ".pdf")]',
-                            './/span[contains(@class, "selectable-text")]',
-                            './/div[contains(@class, "copyable-text")]//span',
-                        ]
-                        
-                        for name_sel in name_selectors:
-                            try:
-                                name_elem = pdf_elem.find_element(By.XPATH, name_sel)
-                                text = name_elem.text.strip()
-                                if text and ".pdf" in text.lower():
-                                    pdf_name = text
-                                    break
-                            except Exception:
-                                continue
+                        chat_container = self.driver.find_element(By.XPATH, sel)
+                        if chat_container:
+                            break
                     except Exception:
-                        pass
+                        continue
+                
+                if chat_container:
+                    # Scroll up multiple times to load older messages
+                    for i in range(5):
+                        self.driver.execute_script(
+                            "arguments[0].scrollTop = 0;", chat_container
+                        )
+                        time.sleep(1)
+                        print(f"  Scrolled up {i+1}/5...")
                     
-                    print(f"\nAttempting to download: {pdf_name}")
+                    # Scroll back to bottom
+                    self.driver.execute_script(
+                        "arguments[0].scrollTop = arguments[0].scrollHeight;", chat_container
+                    )
+                    time.sleep(1)
+            except Exception as e:
+                print(f"  Scroll error: {e}")
+            
+            # Find all PDF elements - ONLY in the main chat area (not sidebar)
+            print("Finding PDF documents in current chat...")
+            
+            # Find ALL span elements in main chat that contain .pdf text
+            all_pdf_spans = self.driver.find_elements(By.XPATH, 
+                '//div[@id="main"]//span[contains(text(), ".pdf")]'
+            )
+            
+            print(f"  Found {len(all_pdf_spans)} PDF spans")
+            
+            # Store tuples of (index, name, y-position) for each unique PDF
+            # We use index to re-find elements later (avoiding XPath escaping issues)
+            pdf_elements = []
+            seen_names = set()
+            
+            for i, elem in enumerate(all_pdf_spans):
+                try:
+                    text = elem.text or ""
+                    if ".pdf" not in text.lower():
+                        continue
+                    
+                    # Get just the filename part (before • or metadata)
+                    clean_name = text.split('•')[0].strip() if '•' in text else text.strip()
+                    
+                    # Skip duplicates based on clean name
+                    if clean_name in seen_names:
+                        continue
+                    seen_names.add(clean_name)
+                    
+                    loc = elem.location
+                    pdf_elements.append({
+                        'index': i,
+                        'name': text,
+                        'clean_name': clean_name,
+                        'y': loc.get('y', 0),
+                    })
+                    print(f"  Found PDF #{len(pdf_elements)}: {clean_name}")
+                except Exception as e:
+                    print(f"  Error processing PDF element: {e}")
+                    continue
+            
+            total_pdfs = len(pdf_elements)
+            print(f"\nTotal unique PDF documents found: {total_pdfs}")
+            
+            if total_pdfs == 0:
+                print("No PDFs found in chat.")
+                return []
+            
+            # Sort by y position (top to bottom)
+            pdf_elements.sort(key=lambda x: x['y'])
+            
+            # Download each PDF
+            for idx, pdf_info in enumerate(pdf_elements):
+                pdf_name = pdf_info['name']
+                clean_name = pdf_info['clean_name']
+                original_index = pdf_info['index']
+                
+                print(f"\nAttempting to download ({idx+1}/{total_pdfs}): {clean_name}")
+                
+                files_before = set(glob.glob(os.path.join(self.download_dir, "*.pdf")))
+                
+                try:
+                    # Re-find ALL PDF spans and get by index
+                    # This avoids XPath issues with special characters
+                    current_pdf_spans = self.driver.find_elements(By.XPATH, 
+                        '//div[@id="main"]//span[contains(text(), ".pdf")]'
+                    )
+                    
+                    pdf_elem = None
+                    
+                    # First try to find by matching the clean name (more reliable than index)
+                    for span in current_pdf_spans:
+                        try:
+                            span_text = span.text or ""
+                            span_clean = span_text.split('•')[0].strip() if '•' in span_text else span_text.strip()
+                            if span_clean == clean_name:
+                                pdf_elem = span
+                                print(f"  → Found by name match")
+                                break
+                        except:
+                            continue
+                    
+                    # Fallback: use original index if still valid
+                    if not pdf_elem and original_index < len(current_pdf_spans):
+                        pdf_elem = current_pdf_spans[original_index]
+                        print(f"  → Found by index fallback")
+                    
+                    if not pdf_elem:
+                        print(f"  ✗ Could not find element for: {clean_name}")
+                        continue
                     
                     # Scroll element into view
                     self.driver.execute_script(
@@ -675,174 +780,125 @@ class WhatsAppScraper:
                     )
                     time.sleep(1)
                     
-                    # Find the parent message container
-                    try:
-                        msg_container = pdf_elem.find_element(
-                            By.XPATH, './ancestor::div[@data-testid="msg-container"]'
-                        )
-                    except Exception:
-                        msg_container = pdf_elem
+                    # Find the clickable parent (the document card)
+                    # This is usually a div with role="button" that wraps the PDF info
+                    clickable = None
                     
-                    # Strategy 1: Look for download button/icon
-                    download_clicked = False
-                    download_selectors = [
-                        './/span[@data-icon="document-download"]',
-                        './/span[@data-icon="download"]',
-                        './/button[@aria-label="Download"]',
-                        './/*[@data-testid="media-card-download"]',
-                        './/div[@role="button" and contains(@aria-label, "Download")]',
-                        './/span[@data-icon="media-download"]',
-                    ]
-                    
-                    for dl_sel in download_selectors:
+                    # Try to find the closest clickable parent
+                    for ancestor_sel in [
+                        './ancestor::div[@role="button"][1]',  # Closest button ancestor
+                        './ancestor::div[contains(@class, "_akbu")][1]',  # WhatsApp doc card class
+                        './ancestor::div[@data-testid="document-card"][1]',
+                        './..',  # Direct parent
+                    ]:
                         try:
-                            download_btn = msg_container.find_element(By.XPATH, dl_sel)
-                            if download_btn.is_displayed():
-                                print(f"  → Clicking download button")
-                                download_btn.click()
-                                download_clicked = True
-                                time.sleep(2)
-                                break
+                            clickable = pdf_elem.find_element(By.XPATH, ancestor_sel)
+                            if clickable:
+                                # Verify it's actually clickable
+                                class_attr = clickable.get_attribute("class") or ""
+                                role_attr = clickable.get_attribute("role") or ""
+                                if role_attr == "button" or "button" in class_attr.lower():
+                                    print(f"  → Found clickable card (role: {role_attr})")
+                                    break
                         except Exception:
                             continue
                     
-                    # Strategy 2: Click the document card itself to open preview
-                    if not download_clicked:
-                        try:
-                            # Find clickable document card
-                            card_selectors = [
-                                './/div[@role="button"]',
-                                './/div[contains(@class, "_akbu")]',
-                                './/div[@data-testid="media-document"]',
-                            ]
-                            
-                            clickable_card = None
-                            for card_sel in card_selectors:
-                                try:
-                                    clickable_card = msg_container.find_element(By.XPATH, card_sel)
-                                    if clickable_card:
-                                        break
-                                except Exception:
-                                    continue
-                            
-                            if not clickable_card:
-                                clickable_card = msg_container
-                            
-                            print(f"  → Clicking document card to open preview")
-                            clickable_card.click()
-                            time.sleep(2)
-                            
-                            # Handle preview dialog
+                    # If no button found, try finding any parent container that has a click handler
+                    if not clickable:
+                        # Go up the DOM tree to find a larger clickable container
+                        current = pdf_elem
+                        for _ in range(5):  # Check up to 5 levels
                             try:
-                                # Wait for preview dialog
-                                WebDriverWait(self.driver, 5).until(
-                                    EC.presence_of_element_located(
-                                        (By.XPATH, '//div[contains(@class, "drawer-container")] | //div[@role="dialog"]')
-                                    )
-                                )
+                                parent = current.find_element(By.XPATH, './..')
+                                tag = parent.tag_name
+                                role = parent.get_attribute("role") or ""
                                 
-                                # Look for download button in preview
-                                preview_download_selectors = [
-                                    '//span[@data-icon="download"]',
-                                    '//button[@aria-label="Download"]',
-                                    '//div[@role="button"]//span[@data-icon="download"]',
-                                    '//span[@data-icon="media-download"]',
-                                ]
-                                
-                                for preview_sel in preview_download_selectors:
-                                    try:
-                                        preview_btn = self.driver.find_element(By.XPATH, preview_sel)
-                                        if preview_btn.is_displayed():
-                                            print(f"  → Clicking download in preview dialog")
-                                            preview_btn.click()
-                                            download_clicked = True
-                                            time.sleep(2)
-                                            break
-                                    except Exception:
-                                        continue
-                                
-                                # Close preview dialog
-                                try:
-                                    close_selectors = [
-                                        '//button[@aria-label="Close"]',
-                                        '//span[@data-icon="x-viewer"]',
-                                        '//span[@data-icon="back"]',
-                                    ]
-                                    for close_sel in close_selectors:
-                                        try:
-                                            close_btn = self.driver.find_element(By.XPATH, close_sel)
-                                            if close_btn.is_displayed():
-                                                close_btn.click()
-                                                time.sleep(1)
-                                                break
-                                        except Exception:
-                                            continue
-                                except Exception:
-                                    # Press ESC to close
-                                    self.driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.ESCAPE)
-                                    time.sleep(1)
-                                    
-                            except TimeoutException:
-                                print(f"  → No preview dialog appeared")
-                                pass
+                                if role == "button" or tag == "button":
+                                    clickable = parent
+                                    print(f"  → Found button at level {_+1}")
+                                    break
+                                current = parent
+                            except Exception:
+                                break
+                    
+                    # Use the found clickable element, or fall back to the PDF element
+                    click_target = clickable if clickable else pdf_elem
+                    
+                    print(f"  → Clicking to download...")
+                    
+                    # Click to download - try multiple methods
+                    click_success = False
+                    for method in ['action_click', 'js_click', 'direct_click']:
+                        try:
+                            if method == 'action_click':
+                                ActionChains(self.driver).move_to_element(click_target).click().perform()
+                            elif method == 'js_click':
+                                self.driver.execute_script("arguments[0].click();", click_target)
+                            else:
+                                click_target.click()
                             
+                            click_success = True
+                            print(f"  → Click succeeded ({method})")
+                            break
                         except Exception as e:
-                            print(f"  → Error with preview strategy: {e}")
+                            print(f"  → {method} failed: {e}")
+                            continue
+                    
+                    if not click_success:
+                        print(f"  ✗ All click methods failed")
+                        continue
+                    
+                    # Wait for download
+                    time.sleep(2)
                     
                     # Wait for download to complete
-                    if download_clicked:
-                        print(f"  → Waiting for download to complete...")
-                        max_wait = 15
-                        initial_files = set(glob.glob(os.path.join(self.download_dir, "*.pdf")))
+                    print(f"  → Waiting for download...")
+                    download_success = False
+                    
+                    for wait_sec in range(20):  # Wait up to 20 seconds
+                        time.sleep(1)
+                        files_after = set(glob.glob(os.path.join(self.download_dir, "*.pdf")))
+                        new_files = files_after - files_before
                         
-                        for i in range(max_wait):
-                            time.sleep(1)
-                            current_files = set(glob.glob(os.path.join(self.download_dir, "*.pdf")))
-                            new_files = current_files - initial_files
-                            
-                            if new_files:
-                                print(f"  ✓ Download completed: {len(new_files)} file(s)")
-                                pdf_paths.extend(list(new_files))
-                                pdf_count += 1
-                                break
-                            
-                            # Check for .crdownload files (Chrome partial downloads)
-                            partial_files = glob.glob(os.path.join(self.download_dir, "*.crdownload"))
-                            if partial_files:
-                                print(f"  → Download in progress... ({i+1}s)")
-                        else:
-                            print(f"  ✗ Download timeout - file may not have downloaded")
+                        if new_files:
+                            print(f"  ✓ Downloaded: {list(new_files)[0]}")
+                            pdf_paths.extend(list(new_files))
+                            download_success = True
+                            break
+                        
+                        # Check for partial downloads
+                        partial = glob.glob(os.path.join(self.download_dir, "*.crdownload"))
+                        if partial:
+                            print(f"  → Downloading... ({wait_sec+1}s)")
+                    
+                    if not download_success:
+                        print(f"  ✗ Download failed for: {pdf_name}")
+                    
+                    # Close any open preview before next PDF
+                    try:
+                        self.driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.ESCAPE)
+                        time.sleep(0.5)
+                    except Exception:
+                        pass
                     
                 except Exception as e:
-                    print(f"  ✗ Error downloading PDF: {e}")
+                    print(f"  ✗ Error processing {pdf_name}: {e}")
                     continue
             
-            # Final check for all PDFs in download directory
-            time.sleep(2)
-            final_pdf_files = glob.glob(os.path.join(self.download_dir, "*.pdf"))
-
-            # Deduplicate files like "PL02.pdf" and "PL02 (1).pdf" so they count as one
-            unique_by_base = {}
-            for path in final_pdf_files:
-                base = os.path.basename(path)
-                # Normalize names like "PL02 (1).pdf" → "PL02.pdf"
-                canonical = re.sub(r" \(\d+\)(?=\.pdf$)", "", base, flags=re.IGNORECASE)
-                if canonical not in unique_by_base:
-                    unique_by_base[canonical] = path
-
-            deduped_pdf_files = list(unique_by_base.values())
-
+            # Final summary
+            final_files = glob.glob(os.path.join(self.download_dir, "*.pdf"))
             print("\n==============================")
-            print(f"Total PDFs downloaded: {len(deduped_pdf_files)}")
+            print(f"Total PDFs downloaded: {len(final_files)}")
             print("==============================")
             
-            return deduped_pdf_files
+            return final_files
             
         except Exception as e:
             print(f"Error while downloading PDFs: {e}")
             import traceback
             traceback.print_exc()
             return []
+
 
     def safe_click(self, element):
         """Try multiple methods to click an element"""

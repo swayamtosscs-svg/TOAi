@@ -1093,38 +1093,77 @@ Date: {date}
         return len(all_chunks)
 
     def retrieve_context(self, query, k=5):
-        """Retrieve context from vector store. Thread-safe for concurrent access."""
+        """Retrieve context from vector store. Thread-safe for concurrent access.
+        Returns tuple of (context_string, list_of_sources)
+        """
         with _rag_lock:
             if self.vector_store is None:
-                return ""
+                return "", []
             docs = self.vector_store.similarity_search(query, k=k)
-        context = "\n\n---\n\n".join(
-            [
-                f"Source: {doc.metadata.get('source', 'Unknown')}\n{doc.page_content}"
-                for doc in docs
-            ]
-        )
-        return context
+        
+        # Build context with source attribution
+        context_parts = []
+        sources = []
+        for doc in docs:
+            source = doc.metadata.get('source', 'Unknown')
+            file_type = doc.metadata.get('file_type', 'document')
+            
+            # Track unique sources
+            if source not in sources:
+                sources.append(source)
+            
+            context_parts.append(f"Source: {source}\n{doc.page_content}")
+        
+        context = "\n\n---\n\n".join(context_parts)
+        return context, sources
 
-    def generate_response(self, query, context):
+    def generate_response(self, query, context, sources=None):
+        """Generate response with citations from the sources."""
+        if sources is None:
+            sources = []
+        
+        # Build sources citation hint
+        sources_hint = ""
+        if sources:
+            sources_list = ", ".join(sources)
+            sources_hint = f"\n\nAvailable sources for citation: {sources_list}"
+        
         messages = [
             {
                 "role": "system",
-                "content": "You are a helpful assistant that answers questions based on documents and WhatsApp conversations. Maintain context from previous questions.",
+                "content": """You are a helpful assistant that answers questions based on documents and WhatsApp conversations. 
+                
+IMPORTANT: When answering questions from the provided context, you MUST:
+1. Cite the source document(s) you used to form your answer
+2. At the end of your response, include a "Sources:" section listing all referenced documents
+3. Use the exact source names provided in the context (e.g., "Source: filename.pdf")
+4. If information comes from WhatsApp, cite it as "WhatsApp messages"
+5. If information comes from Gmail, cite it as "Gmail - [subject]"
+
+Example format:
+[Your answer here]
+
+**Sources:**
+- document1.pdf
+- document2.pdf
+- WhatsApp messages
+
+Maintain context from previous questions.""",
             }
         ]
 
         for msg in self.chat_history[-5:]:
             messages.append(msg)
 
-        prompt = f"""Based on the following context, please answer the question.
+        prompt = f"""Based on the following context, please answer the question. Remember to cite your sources.
 
 Context:
 {context}
+{sources_hint}
 
 Question: {query}
 
-Provide a detailed answer based on the context."""
+Provide a detailed answer based on the context and include citations."""
 
         messages.append({"role": "user", "content": prompt})
 
@@ -2083,30 +2122,40 @@ def chat(payload: ChatRequest):
         
         # Route query based on available tools
         if has_excel and excel_agent_system.is_excel_query(query):
-            # Use Excel agent for quantitative queries
+            # Use Excel agent for quantitative queries - DO NOT mix with RAG
             query_type = "excel"
             tools_used = ["Excel_Data_Analyst"]
             excel_analysis = excel_agent_system.run_query(query)
             
-            # Combine with RAG context if available
-            rag_context = ""
-            if has_rag:
-                rag_context = rag_system.retrieve_context(query, k=5)
+            # Get the Excel file names that were used
+            excel_files = list(excel_agent_system.dataframes.keys())
+            excel_sources = ", ".join(excel_files) if excel_files else "Excel data"
             
-            # Generate final response
-            combined_prompt = f"""Answer the user's question using the Excel data analysis:
+            # Generate response with ONLY Excel sources - no RAG context
+            combined_prompt = f"""Answer the user's question using ONLY the Excel data analysis result below.
 
 User Question: {query}
 
 Excel Data Analysis Result:
 {excel_analysis}
 
-Additional Context:
-{rag_context if rag_context else "No additional context."}
+IMPORTANT: 
+- Base your answer ONLY on the Excel data analysis above
+- Do NOT reference any other documents
+- At the end, include a **Sources:** section listing ONLY the Excel file(s): {excel_sources}
 
-Provide a clear, concise answer based on the data."""
+Provide a clear, concise answer based on the Excel data."""
 
-            messages = [{"role": "system", "content": "You are a helpful data analyst."}]
+            messages = [{
+                "role": "system", 
+                "content": f"""You are a helpful data analyst. You are answering a question using Excel data.
+                
+CRITICAL RULES:
+1. ONLY cite Excel file sources: {excel_sources}
+2. Do NOT mention or cite any PDF, DOCX, or other document files
+3. Your answer is based purely on Excel data analysis
+4. End with **Sources:** section listing only the Excel file(s) used"""
+            }]
             messages.append({"role": "user", "content": combined_prompt})
             
             chat_completion = rag_system.groq_client.chat.completions.create(
@@ -2121,8 +2170,8 @@ Provide a clear, concise answer based on the data."""
             # Use RAG for document-based queries
             query_type = "rag"
             tools_used = ["PDF_Document_Knowledge_Base"]
-            context = rag_system.retrieve_context(query, k=10)
-            response = rag_system.generate_response(query, context)
+            context, sources = rag_system.retrieve_context(query, k=10)
+            response = rag_system.generate_response(query, context, sources)
             
         else:
             # No data sources - use general knowledge
@@ -2167,12 +2216,51 @@ def status():
 
 @app.post("/api/reset")
 def reset_rag():
-    """Reset the in-memory RAG system, Excel agent, and agentic router (clears vector store and chat history)."""
+    """Reset the in-memory RAG system, Excel agent, agentic router, and clear all uploaded files."""
     global rag_system, excel_agent_system, agentic_router
+    
+    # Reset in-memory systems
     rag_system = None
     excel_agent_system = None
     agentic_router = None
-    return {"message": "RAG system, Excel agent, and agentic router reset successfully"}
+    
+    # Clear uploaded files
+    cleared_counts = {
+        "uploads": 0,
+        "whatsapp_downloads": 0,
+        "whatsapp_images": 0,
+        "google_drive_downloads": 0
+    }
+    
+    directories_to_clear = [
+        (UPLOAD_FOLDER, "uploads"),
+        (WHATSAPP_DOWNLOAD_DIR, "whatsapp_downloads"),
+        (WHATSAPP_IMAGES_DIR, "whatsapp_images"),
+        (GOOGLE_DRIVE_DOWNLOAD_DIR, "google_drive_downloads")
+    ]
+    
+    for dir_path, name in directories_to_clear:
+        if os.path.exists(dir_path):
+            try:
+                for item in os.listdir(dir_path):
+                    item_path = os.path.join(dir_path, item)
+                    try:
+                        if os.path.isfile(item_path):
+                            os.remove(item_path)
+                            cleared_counts[name] += 1
+                        elif os.path.isdir(item_path):
+                            shutil.rmtree(item_path)
+                            cleared_counts[name] += 1
+                    except Exception as e:
+                        print(f"[RESET] Could not remove {item_path}: {e}")
+            except Exception as e:
+                print(f"[RESET] Error clearing {dir_path}: {e}")
+    
+    print(f"[RESET] Cleared: {cleared_counts}")
+    return {
+        "message": "RAG system, Excel agent, agentic router, and all uploaded files reset successfully",
+        "files_cleared": cleared_counts
+    }
 
 
 @app.exception_handler(Exception)

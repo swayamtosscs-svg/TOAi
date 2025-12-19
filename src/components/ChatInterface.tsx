@@ -11,15 +11,26 @@ import {
   getWhatsAppGroups,
   getGoogleAuthUrl,
   syncGoogleDriveAndEmail,
+  getGoogleConnectionStatus,
 } from '../backendClient'
 
 interface ChatInterfaceProps {
   messages: Message[]
   onSendMessage: (content: string) => void
   activeProjectName?: string
+  userAvatarUrl?: string
+  onLogout: () => void
+  onOpenSettings: () => void
 }
 
-const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInterfaceProps) => {
+const ChatInterface = ({
+  messages,
+  onSendMessage,
+  activeProjectName,
+  userAvatarUrl,
+  onLogout,
+  onOpenSettings,
+}: ChatInterfaceProps) => {
   const [isTyping, setIsTyping] = useState(false)
   const [activeIcons, setActiveIcons] = useState<Record<string, boolean>>({})
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
@@ -27,15 +38,29 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
   const [whatsAppStage, setWhatsAppStage] = useState<'scan' | 'groups'>('scan')
   const [selectedGroups, setSelectedGroups] = useState<string[]>([])
   const [groupSearch, setGroupSearch] = useState('')
-  const [whatsAppGroups, setWhatsAppGroups] = useState<string[]>([
-    'Sales Updates',
-    'Support Escalations',
-    'Management Daily',
-    'Project Alpha Squad',
-    'Vendors & Partners',
-  ])
+  const [whatsAppGroups, setWhatsAppGroups] = useState<string[]>([])
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false)
+  const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false)
   const [whatsAppQr, setWhatsAppQr] = useState<string | null>(null)
   const [isGoogleConnecting, setIsGoogleConnecting] = useState(false)
+  const [loadingService, setLoadingService] = useState<'drive' | 'email' | null>(null)
+  const [connectedServices, setConnectedServices] = useState<Set<'drive' | 'email'>>(() => {
+    // Load from localStorage on mount
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('google_connected_services')
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          return new Set(parsed)
+        } catch {
+          return new Set()
+        }
+      }
+    }
+    return new Set()
+  })
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [isExtracting, setIsExtracting] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const integrationIcons = [
@@ -81,6 +106,8 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
         ...prev,
         [id]: true,
       }))
+      // Check connection status when modal opens
+      checkGoogleConnectionStatus()
       return
     }
 
@@ -88,6 +115,22 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
       ...prev,
       [id]: !prev[id],
     }))
+  }
+
+  const checkGoogleConnectionStatus = async () => {
+    try {
+      const status = await getGoogleConnectionStatus()
+      if (status.authenticated) {
+        // If authenticated, mark both as connected
+        const newSet = new Set<'drive' | 'email'>(['drive', 'email'])
+        setConnectedServices(newSet)
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('google_connected_services', JSON.stringify(['drive', 'email']))
+        }
+      }
+    } catch (err) {
+      console.error('Failed to check Google connection status:', err)
+    }
   }
 
   const handleCloseWhatsApp = () => {
@@ -102,6 +145,8 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
 
   const handleCloseGoogle = () => {
     setShowGoogleModal(false)
+    setIsGoogleConnecting(false)
+    setLoadingService(null)
     setActiveIcons((prev) => ({
       ...prev,
       google: false,
@@ -111,11 +156,13 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
   const handleGoogleConnect = async (source: 'drive' | 'email') => {
     if (isGoogleConnecting) return
     setIsGoogleConnecting(true)
+    setLoadingService(source)
 
     try {
       const authUrl = await getGoogleAuthUrl()
       if (!authUrl || typeof window === 'undefined') {
         setIsGoogleConnecting(false)
+        setLoadingService(null)
         return
       }
 
@@ -132,11 +179,21 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
           const credentials = data.credentials as Record<string, any>
           if (accessToken && credentials) {
             await syncGoogleDriveAndEmail(accessToken, credentials)
+            // Mark the service as connected after successful fetch
+            setConnectedServices((prev) => {
+              const newSet = new Set(prev).add(source)
+              // Persist to localStorage
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('google_connected_services', JSON.stringify(Array.from(newSet)))
+              }
+              return newSet
+            })
           }
         } catch (err) {
           console.error('Error syncing Google Drive / Gmail:', err)
         } finally {
           setIsGoogleConnecting(false)
+          setLoadingService(null)
           if (popup && !popup.closed) {
             popup.close()
           }
@@ -147,6 +204,7 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
     } catch (err) {
       console.error('Failed to start Google connection:', err)
       setIsGoogleConnecting(false)
+      setLoadingService(null)
     }
   }
 
@@ -180,10 +238,18 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
   }
 
   const handleConnectSelected = async () => {
-    if (!selectedGroups.length) return
-    // Trigger backend scrape for selected WhatsApp groups; results are loaded into RAG
-    await scrapeWhatsAppGroups(selectedGroups)
-    handleCloseWhatsApp()
+    if (!selectedGroups.length || isExtracting) return
+
+    setIsExtracting(true)
+    try {
+      // Trigger backend scrape for selected WhatsApp groups; results are loaded into RAG
+      await scrapeWhatsAppGroups(selectedGroups)
+      // Mark WhatsApp as connected after successful scraping
+      setIsWhatsAppConnected(true)
+    } finally {
+      setIsExtracting(false)
+      handleCloseWhatsApp()
+    }
   }
 
   // Poll WhatsApp login status while QR scan stage is visible
@@ -212,9 +278,16 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
     let cancelled = false
 
     const loadGroups = async () => {
-      const groups = await getWhatsAppGroups()
-      if (!cancelled && groups.length) {
-        setWhatsAppGroups(groups)
+      setIsLoadingGroups(true)
+      try {
+        const groups = await getWhatsAppGroups()
+        if (!cancelled && groups.length) {
+          setWhatsAppGroups(groups)
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingGroups(false)
+        }
       }
     }
 
@@ -262,38 +335,50 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
           <div className="inline-flex items-center gap-3 sm:gap-4 px-3 py-1 rounded-full border border-slate-300/70 dark:border-slate-600/70 bg-white/80 dark:bg-slate-900/70 text-slate-500 dark:text-slate-300 shadow-sm">
             {integrationIcons.map((icon) => {
               const isActive = !!activeIcons[icon.id]
+              // Check if this integration is connected
+              const isConnected =
+                (icon.id === 'whatsapp' && isWhatsAppConnected) ||
+                (icon.id === 'google' && connectedServices.size > 0)
+
               return (
                 <div key={icon.id} className="relative group flex flex-col items-center">
                   <button
                     onClick={() => handleIconClick(icon.id)}
-                    className="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                    className={`relative p-2 rounded-full transition ${isConnected
+                      ? 'bg-emerald-100 dark:bg-emerald-900/30 ring-2 ring-emerald-500'
+                      : 'hover:bg-slate-100 dark:hover:bg-slate-700'
+                      }`}
                     aria-label={icon.label}
                     aria-pressed={isActive}
                   >
                     {icon.id === 'google' ? (
                       <div
-                        className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[11px] font-semibold ${
-                          isActive
+                        className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[11px] font-semibold ${isConnected
+                          ? 'bg-emerald-500 text-white'
+                          : isActive
                             ? 'bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 text-white'
                             : 'border border-slate-400/70 dark:border-slate-500/80 text-slate-400 dark:text-slate-300'
-                        }`}
+                          }`}
                       >
                         G
                       </div>
                     ) : (
                       <img
-                        src={isActive ? icon.onSrc : icon.offSrc}
+                        src={isActive || isConnected ? icon.onSrc : icon.offSrc}
                         alt={icon.label}
-                        className={`w-[18px] h-[18px] ${
-                          icon.id === 'whatsapp'
-                            ? '-translate-y-[3px]'
-                            : icon.id === 'oracle'
+                        className={`w-[18px] h-[18px] ${icon.id === 'whatsapp'
+                          ? '-translate-y-[3px]'
+                          : icon.id === 'oracle'
                             ? '-translate-y-[1px]'
                             : ''
-                        }`}
+                          }`}
                       />
                     )}
-                    {icon.id === 'google' && (
+                    {/* Connected indicator dot */}
+                    {isConnected && (
+                      <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
+                    )}
+                    {icon.id === 'google' && !isConnected && (
                       <div
                         className="absolute w-1 h-1 rounded-full bg-[#D9D9D9]"
                         style={{
@@ -308,7 +393,7 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
                     )}
                   </button>
                   <div className="pointer-events-none absolute top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 text-white text-[10px] px-2 py-1 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-1 transition-all duration-150 shadow-lg">
-                    {icon.label}
+                    {icon.label}{isConnected ? ' ✓' : ''}
                   </div>
                 </div>
               )
@@ -346,9 +431,80 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
             </div>
           </button>
 
-          {/* Profile avatar - gradient U icon */}
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500 flex items-center justify-center text-xs sm:text-sm font-semibold text-white shadow-soft">
-            U
+          {/* Profile avatar / Google DP with logout menu */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowProfileMenu((prev) => !prev)}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-slate-300 dark:border-slate-600 shadow-soft flex items-center justify-center bg-gradient-to-r from-teal-500 via-violet-500 to-cyan-500"
+              aria-label="User menu"
+            >
+              {userAvatarUrl ? (
+                <img
+                  src={userAvatarUrl}
+                  alt="User avatar"
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="text-xs sm:text-sm font-semibold text-white">U</span>
+              )}
+            </button>
+
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-2 w-40 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg py-2 text-xs text-slate-700 dark:text-slate-200 z-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowProfileMenu(false)
+                    onOpenSettings()
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 mb-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-[11px] font-medium"
+                >
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                    <svg
+                      className="w-3 h-3"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82L4.21 6.21a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                  </span>
+                  <span>Settings</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowProfileMenu(false)
+                    onLogout()
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-[11px] font-medium"
+                >
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300">
+                    <svg
+                      className="w-3 h-3"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                  </span>
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -459,49 +615,37 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
               {whatsAppStage === 'scan' ? (
                 <div className="flex flex-col md:flex-row gap-6 items-center md:items-stretch">
                   {/* QR Preview / Scanner Placeholder */}
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="relative w-56 h-56 rounded-2xl bg-white dark:bg-slate-900 border border-dashed border-emerald-400/70 flex items-center justify-center shadow-inner overflow-hidden">
-                      <div className="absolute inset-3 rounded-xl border-2 border-emerald-400/70 pointer-events-none" />
-                      <div className="relative z-10 text-center px-2">
-                        {whatsAppQr ? (
-                          <>
-                            <img
-                              src={`data:image/png;base64,${whatsAppQr}`}
-                              alt="WhatsApp QR code"
-                              className="w-40 h-40 mx-auto object-contain"
-                            />
-                            <p className="mt-3 text-xs font-medium text-slate-600 dark:text-slate-300">
-                              Scan this QR code with WhatsApp
-                            </p>
-                            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                              Open WhatsApp &gt; Linked devices &gt; Link a device.
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <svg
-                              className="w-16 h-16 mx-auto text-slate-400 dark:text-slate-500"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M4 5h4M5 4v4M4 19h4M5 16v4M16 4h4M19 4v4M16 20h4M19 16v4M9 9h1v1H9zM12 9h1v1h-1zM15 9h1v1h-1zM9 12h1v1H9zM12 12h1v1h-1zM15 12h1v1h-1zM9 15h1v1H9zM12 15h1v1h-1zM15 15h1v1h-1z"
-                              />
-                            </svg>
-                            <p className="mt-3 text-xs font-medium text-slate-600 dark:text-slate-300">
-                              QR scanner preview
-                            </p>
-                            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                              Open WhatsApp &gt; Linked devices &gt; Scan this code.
-                            </p>
-                          </>
-                        )}
-                      </div>
+                  <div className="flex-1 flex flex-col items-center justify-center">
+                    <div className="relative w-52 h-52 rounded-2xl bg-white dark:bg-slate-900 border border-dashed border-emerald-400/70 flex items-center justify-center shadow-inner overflow-hidden p-2">
+                      <div className="absolute inset-2 rounded-xl border-2 border-emerald-400/70 pointer-events-none" />
+                      {whatsAppQr ? (
+                        <img
+                          src={whatsAppQr}
+                          alt="WhatsApp QR code"
+                          className="w-44 h-44 object-contain"
+                        />
+                      ) : (
+                        <svg
+                          className="w-16 h-16 text-slate-400 dark:text-slate-500"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M4 5h4M5 4v4M4 19h4M5 16v4M16 4h4M19 4v4M16 20h4M19 16v4M9 9h1v1H9zM12 9h1v1h-1zM15 9h1v1h-1zM9 12h1v1H9zM12 12h1v1h-1zM15 12h1v1h-1zM9 15h1v1H9zM12 15h1v1h-1zM15 15h1v1h-1z"
+                          />
+                        </svg>
+                      )}
                     </div>
+                    <p className="mt-3 text-xs font-medium text-slate-600 dark:text-slate-300 text-center">
+                      {whatsAppQr ? 'Scan this QR code with WhatsApp' : 'QR scanner preview'}
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400 text-center">
+                      Open WhatsApp &gt; Linked devices &gt; Link a device.
+                    </p>
                   </div>
 
                   {/* Instructions */}
@@ -553,64 +697,92 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
                   </div>
 
                   <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                    {filteredWhatsAppGroups.map((group) => {
-                      const isSelected = selectedGroups.includes(group)
-                      return (
-                        <button
-                          key={group}
-                          type="button"
-                          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/90 dark:bg-slate-800 border text-left transition-all ${
-                            isSelected
+                    {isLoadingGroups ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-slate-500 dark:text-slate-400">
+                        <svg className="animate-spin h-8 w-8 mb-3 text-emerald-500" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <p className="text-sm">Loading groups...</p>
+                      </div>
+                    ) : filteredWhatsAppGroups.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-slate-500 dark:text-slate-400">
+                        <svg className="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <p className="text-sm">No groups found</p>
+                        <p className="text-xs mt-1">Make sure WhatsApp is connected and has group chats</p>
+                      </div>
+                    ) : (
+                      filteredWhatsAppGroups.map((group) => {
+                        const isSelected = selectedGroups.includes(group)
+                        return (
+                          <button
+                            key={group}
+                            type="button"
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/90 dark:bg-slate-800 border text-left transition-all ${isSelected
                               ? 'border-emerald-500 shadow-md'
                               : 'border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:shadow-md'
-                          }`}
-                          onClick={() => toggleGroupSelection(group)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleGroupSelection(group)}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500"
-                            />
-                            <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 flex items-center justify-center text-xs font-semibold">
-                              {group
-                                .split(' ')
-                                .map((w) => w[0])
-                                .join('')
-                                .slice(0, 2)
-                                .toUpperCase()}
+                              }`}
+                            onClick={() => toggleGroupSelection(group)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleGroupSelection(group)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500"
+                              />
+                              <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 flex items-center justify-center text-xs font-semibold">
+                                {group
+                                  .split(' ')
+                                  .map((w) => w[0])
+                                  .join('')
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                                  {group}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  Connect this group as a WhatsApp workspace.
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                {group}
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                Connect this group as a WhatsApp workspace.
-                              </p>
-                            </div>
-                          </div>
-                          <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                            {isSelected ? 'Selected' : 'Select'}
-                          </span>
-                        </button>
-                      )
-                    })}
+                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                              {isSelected ? 'Selected' : 'Select'}
+                            </span>
+                          </button>
+                        )
+                      })
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between pt-2">
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      This is a UI preview only. Add your backend / WhatsApp API integration to complete the
-                      flow.
+                      {selectedGroups.length > 0
+                        ? `${selectedGroups.length} group(s) will be connected`
+                        : 'Select groups to extract messages and files'}
                     </p>
                     <button
                       type="button"
                       onClick={handleConnectSelected}
-                      disabled={!selectedGroups.length}
-                      className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-xs font-semibold bg-emerald-500 text-white shadow-soft hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!selectedGroups.length || isExtracting}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-semibold bg-emerald-500 text-white shadow-soft hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
-                      Connect {selectedGroups.length ? `(${selectedGroups.length})` : ''}
+                      {isExtracting ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          <span>Extracting...</span>
+                        </>
+                      ) : (
+                        <>Connect {selectedGroups.length ? `(${selectedGroups.length})` : ''}</>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -682,7 +854,8 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
                 <button
                   type="button"
                   onClick={() => handleGoogleConnect('drive')}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-500 hover:shadow-md transition-all"
+                  disabled={isGoogleConnecting}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-500 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-sky-500/10 flex items-center justify-center">
@@ -701,15 +874,48 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
                       </p>
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-sky-600 dark:text-sky-400">
-                    Connect
-                  </span>
+                  {loadingService === 'drive' ? (
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="animate-spin h-4 w-4 text-sky-600 dark:text-sky-400"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <span className="text-xs font-semibold text-sky-600 dark:text-sky-400">
+                        Connecting...
+                      </span>
+                    </div>
+                  ) : connectedServices.has('drive') ? (
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                      Connected
+                    </span>
+                  ) : (
+                    <span className="text-xs font-semibold text-sky-600 dark:text-sky-400">
+                      Connect
+                    </span>
+                  )}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleGoogleConnect('email')}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-500 hover:shadow-md transition-all"
+                  disabled={isGoogleConnecting}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-500 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-emerald-500/10 flex items-center justify-center">
@@ -728,9 +934,41 @@ const ChatInterface = ({ messages, onSendMessage, activeProjectName }: ChatInter
                       </p>
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-sky-600 dark:text-sky-400">
-                    Connect
-                  </span>
+                  {loadingService === 'email' ? (
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="animate-spin h-4 w-4 text-sky-600 dark:text-sky-400"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <span className="text-xs font-semibold text-sky-600 dark:text-sky-400">
+                        Connecting...
+                      </span>
+                    </div>
+                  ) : connectedServices.has('email') ? (
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                      Connected
+                    </span>
+                  ) : (
+                    <span className="text-xs font-semibold text-sky-600 dark:text-sky-400">
+                      Connect
+                    </span>
+                  )}
                 </button>
               </div>
 

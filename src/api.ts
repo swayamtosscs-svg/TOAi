@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5001/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
 
 export interface AuthResponse {
   success: boolean
@@ -42,6 +42,7 @@ interface ToaiMessagePayload {
   sender_type: SenderType
   message: string
   meta?: unknown
+  project?: string | null
 }
 
 export async function loginUser(email: string, password: string): Promise<AuthResponse> {
@@ -94,6 +95,30 @@ export async function registerUser(name: string, email: string, password: string
   return data
 }
 
+export async function loginWithGoogle(idToken: string, name: string, email: string): Promise<AuthResponse> {
+  const res = await fetch(`${API_BASE_URL}/auth/user/google`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ idToken, name, email }),
+  })
+
+  const data: AuthResponse = await res.json().catch(() => ({ success: false, error: 'Invalid response from server' }))
+
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || `Google login failed with status ${res.status}`)
+  }
+
+  if (data.data?.token) {
+    localStorage.setItem('authToken', data.data.token)
+    localStorage.setItem('authEmail', email)
+    localStorage.setItem('isAuthenticated', 'true')
+  }
+
+  return data
+}
+
 export async function logChatMessage(payload: ToaiMessagePayload): Promise<void> {
   try {
     const res = await fetch(`${API_BASE_URL}/messages`, {
@@ -121,6 +146,7 @@ export interface ToaiMessage {
   id: number
   user_id: number
   session_id: string
+  project?: string | null
   sender_type: string
   message: string
   meta?: any

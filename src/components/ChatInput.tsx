@@ -1,5 +1,6 @@
 import { useState, useRef, KeyboardEvent } from 'react'
 import { createUserSave } from '../api'
+import { uploadKnowledgeFiles } from '../backendClient'
 
 interface ChatInputProps {
   onSend: (content: string) => void
@@ -16,16 +17,42 @@ const ChatInput = ({ onSend, activeProjectName, onSavePrompt }: ChatInputProps) 
   const [promptTags, setPromptTags] = useState('')
   const [promptScope, setPromptScope] = useState('')
   const [promptTemplate, setPromptTemplate] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleSend = () => {
-    if (input.trim()) {
-      onSend(input.trim())
-      setInput('')
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
-      }
+    if (!input.trim()) return
+
+    onSend(input.trim())
+    setInput('')
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
+  }
+
+  // Upload files for AI to reference
+  const handleUploadFiles = async () => {
+    if (attachedFiles.length === 0) return
+
+    setIsUploading(true)
+    try {
+      await uploadKnowledgeFiles(attachedFiles)
+      console.log(`[ChatInput] Uploaded ${attachedFiles.length} files`)
+
+      // Simple success message
+      let uploadMessage = `✓ Successfully uploaded ${attachedFiles.length} file(s)`
+      uploadMessage += `\n\nYou can now ask questions about your files.`
+
+      setAttachedFiles([]) // Clear files after successful upload
+
+      // Notify user about successful upload
+      alert(uploadMessage)
+    } catch (err) {
+      console.error('[ChatInput] File upload failed:', err)
+      alert('File upload failed. Please try again.')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -85,28 +112,61 @@ const ChatInput = ({ onSend, activeProjectName, onSavePrompt }: ChatInputProps) 
 
   return (
     <div className="relative flex flex-col gap-2">
-      {/* Attached Files Display */}
+      {/* Attached Files Display with Upload Button */}
       {attachedFiles.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2">
-          {attachedFiles.map((file, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm"
+        <div className="flex flex-col gap-2 mb-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+              {attachedFiles.length} file(s) ready to upload
+            </span>
+            <button
+              onClick={handleUploadFiles}
+              disabled={isUploading}
+              className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              <span className="text-slate-700 dark:text-slate-300 truncate max-w-[150px]">
-                {file.name}
-              </span>
-              <button
-                onClick={() => handleRemoveFile(index)}
-                className="text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                title="Remove file"
+              {isUploading ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Uploading...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  <span>Upload Files</span>
+                </>
+              )}
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {attachedFiles.map((file, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          ))}
+                <span className="text-slate-700 dark:text-slate-300 truncate max-w-[150px]">
+                  {file.name}
+                </span>
+                <button
+                  onClick={() => handleRemoveFile(index)}
+                  disabled={isUploading}
+                  className="text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+                  title="Remove file"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            💡 Supported: PDF, Excel, Word, Images, and Text files
+          </p>
         </div>
       )}
 
@@ -116,6 +176,7 @@ const ChatInput = ({ onSend, activeProjectName, onSavePrompt }: ChatInputProps) 
           ref={fileInputRef}
           type="file"
           multiple
+          accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.csv,.png,.jpg,.jpeg,.gif,.webp"
           className="hidden"
           onChange={handleFileChange}
         />
@@ -124,7 +185,6 @@ const ChatInput = ({ onSend, activeProjectName, onSavePrompt }: ChatInputProps) 
         <div className="relative flex items-center gap-1 sm:gap-0 rounded-2xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-soft dark:shadow-soft-dark focus-within:ring-2 focus-within:ring-teal-500/50 focus-within:border-teal-500 dark:focus-within:ring-cyan-500/50 dark:focus-within:border-cyan-500 transition-all min-h-[40px]">
           {/* Save Prompt Button */}
           <button
-            onClick={handleSavePromptClick}
             className="p-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex-shrink-0"
             title="Save Prompt"
             type="button"
@@ -168,7 +228,7 @@ const ChatInput = ({ onSend, activeProjectName, onSavePrompt }: ChatInputProps) 
             </svg>
           </button>
 
-          {/* Send Button */}
+          {/* Send Button - Text queries only */}
           <button
             onClick={handleSend}
             disabled={!input.trim()}

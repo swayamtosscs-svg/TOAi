@@ -42,7 +42,7 @@ export async function backendChat(query: string): Promise<BackendChatResponse> {
   return data as BackendChatResponse
 }
 
-// ========== Gmail Emails & Knowledge Upload ==========
+// ========== Gmail Emails & File Upload ==========
 
 export async function fetchBackendEmails(): Promise<BackendEmail[]> {
   const res = await fetch(`${BACKEND_BASE_URL}/api/emails`)
@@ -76,7 +76,7 @@ export async function uploadKnowledgeFiles(files: File[]): Promise<void> {
 
   // Best-effort; log but don't throw to avoid breaking UI
   if (!res.ok) {
-    console.warn('Knowledge upload failed', await res.text())
+    console.warn('File upload failed', await res.text())
   }
 }
 
@@ -122,6 +122,20 @@ interface GoogleDriveFilesResponse {
   loaded_to_rag: number
   emails?: any[]
   emails_loaded?: number
+}
+
+export async function getGoogleConnectionStatus(): Promise<{ authenticated: boolean }> {
+  try {
+    const res = await fetch(`${BACKEND_BASE_URL}/api/drive/status`)
+    const data = await res.json().catch(() => null)
+    if (!res.ok) {
+      return { authenticated: false }
+    }
+    return { authenticated: !!data?.authenticated }
+  } catch (err) {
+    console.error('Failed to check Google connection status:', err)
+    return { authenticated: false }
+  }
 }
 
 export async function getGoogleAuthUrl(): Promise<string | null> {
@@ -267,5 +281,18 @@ export async function getWhatsAppGroups(): Promise<string[]> {
   }
 }
 
-
+/**
+ * Reset the backend session and clear all uploaded files.
+ * Call this when the browser/frontend reloads to ensure a fresh session.
+ */
+export async function resetBackend(): Promise<void> {
+  try {
+    await fetch(`${BACKEND_BASE_URL}/api/reset`, {
+      method: 'POST',
+    })
+    console.log('[Backend] Session reset successfully')
+  } catch (err) {
+    console.error('Failed to reset backend:', err)
+  }
+}
 

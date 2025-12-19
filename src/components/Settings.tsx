@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Logo from './Logo'
 
 interface SettingsProps {
@@ -10,6 +10,26 @@ const Settings = ({ onClose, onLogout }: SettingsProps) => {
   const [activeTab, setActiveTab] = useState<'model-usage' | 'api-usage' | 'load-balancing'>('model-usage')
   const [activeNav, setActiveNav] = useState('dashboard')
   const [showNavMobile, setShowNavMobile] = useState(false)
+  const [profileName, setProfileName] = useState<string>('—')
+  const [profileEmail, setProfileEmail] = useState<string>('—')
+  const [authMethod, setAuthMethod] = useState<string>('—')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const storedName = localStorage.getItem('userName') || '—'
+    const storedEmail = localStorage.getItem('userEmail') || '—'
+    const loginMethod = localStorage.getItem('loginMethod') || 'email'
+
+    let authLabel = 'Email & password'
+    if (loginMethod === 'google') {
+      authLabel = 'Google · SSO'
+    }
+
+    setProfileName(storedName)
+    setProfileEmail(storedEmail)
+    setAuthMethod(authLabel)
+  }, [])
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -1088,7 +1108,7 @@ const Settings = ({ onClose, onLogout }: SettingsProps) => {
                     <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
                       Name
                     </p>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">useradmin_example</p>
+                    <p className="font-medium text-slate-900 dark:text-slate-50">{profileName}</p>
                   </div>
                   <div>
                     <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
@@ -1100,13 +1120,13 @@ const Settings = ({ onClose, onLogout }: SettingsProps) => {
                     <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
                       Email
                     </p>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">admin@acme.com</p>
+                    <p className="font-medium text-slate-900 dark:text-slate-50">{profileEmail}</p>
                   </div>
                   <div>
                     <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
                       Authentication
                     </p>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">SSO · Okta</p>
+                    <p className="font-medium text-slate-900 dark:text-slate-50">{authMethod}</p>
                   </div>
                 </div>
               </div>

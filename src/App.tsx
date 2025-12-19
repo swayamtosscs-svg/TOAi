@@ -8,7 +8,7 @@ import Logo from './components/Logo'
 import Auth from './components/Auth'
 import { Message, Project } from './types'
 import { clearAuth, logChatMessage, fetchMessagesBySession } from './api'
-import { backendChat } from './backendClient'
+import { backendChat, resetBackend } from './backendClient'
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -25,6 +25,9 @@ function App() {
     const hasToken = !!localStorage.getItem('authToken')
     return hasFlag || hasToken
   })
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(() => {
+    return localStorage.getItem('userPhoto') || null
+  })
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
     if (saved !== null) {
@@ -32,6 +35,11 @@ function App() {
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   })
+
+  useEffect(() => {
+    // Reset backend on initial app load to ensure a fresh session
+    resetBackend()
+  }, [])
 
   useEffect(() => {
     // Apply initial dark mode
@@ -44,11 +52,21 @@ function App() {
 
   const handleAuthenticated = () => {
     setIsAuthenticated(true)
+    // Refresh avatar from localStorage (set by Auth component)
+    const storedPhoto = localStorage.getItem('userPhoto')
+    setUserAvatarUrl(storedPhoto || null)
   }
 
   const handleLogout = () => {
     clearAuth()
     setIsAuthenticated(false)
+    setUserAvatarUrl(null)
+    try {
+      localStorage.removeItem('userPhoto')
+      localStorage.removeItem('loginMethod')
+    } catch {
+      // Ignore localStorage errors
+    }
     setShowSettings(false)
     setIsSidebarOpenMobile(false)
   }
@@ -56,7 +74,16 @@ function App() {
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => `session-${Date.now()}`)
 
   const handleSendMessage = async (content: string) => {
-    const sessionId = currentSessionId || selectedProjectId || 'default-session'
+    let sessionId: string
+    let projectName: string | undefined
+
+    if (selectedProjectId && activeProjectName) {
+      // For project workspaces, keep a single logical session per project
+      sessionId = `project-${selectedProjectId}`
+      projectName = activeProjectName
+    } else {
+      sessionId = currentSessionId || 'default-session'
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -64,7 +91,7 @@ function App() {
       role: 'user',
       timestamp: new Date(),
     }
-    
+
     // Add user message immediately
     setMessages((prev) => [...prev, userMessage])
 
@@ -73,8 +100,9 @@ function App() {
       session_id: sessionId,
       sender_type: 'user',
       message: content,
+      project: projectName ?? null,
     })
-    
+
     try {
       const chatResult = await backendChat(content)
 
@@ -96,6 +124,7 @@ function App() {
         session_id: sessionId,
         sender_type: 'toai_ai',
         message: aiText,
+        project: projectName ?? null,
       })
     } catch (error) {
       console.error('Error sending message to AI:', error)
@@ -377,6 +406,14 @@ function App() {
                 messages={messages}
                 onSendMessage={handleSendMessage}
                 activeProjectName={activeProjectName}
+                userAvatarUrl={userAvatarUrl || undefined}
+                onLogout={handleLogout}
+                onOpenSettings={() => {
+                  setShowSettings(true)
+                  setShowEmailManager(false)
+                  setShowSavedPrompts(false)
+                  setShowProjects(false)
+                }}
               />
             )}
           </div>
@@ -480,11 +517,10 @@ function App() {
                   setNewProjectName('')
                   setShowProjects(false)
                 }}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium ${
-                  newProjectName.trim()
-                    ? 'bg-teal-500 text-white hover:bg-teal-400'
-                    : 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
-                }`}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium ${newProjectName.trim()
+                  ? 'bg-teal-500 text-white hover:bg-teal-400'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
+                  }`}
               >
                 Create project
               </button>

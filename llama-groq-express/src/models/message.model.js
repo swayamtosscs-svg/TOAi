@@ -8,14 +8,15 @@ export const messageModel = {
    * Create a new message
    */
   async create(data) {
-    const { user_id, session_id, sender_type, message, meta = null } = data
+    const { user_id, session_id, sender_type, message, meta = null, project = null } = data
     const query = `
-      INSERT INTO toai_message (user_id, session_id, sender_type, message, meta)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO toai_message (user_id, session_id, project, sender_type, message, meta)
+      VALUES (?, ?, ?, ?, ?, ?)
     `
     const [result] = await pool.execute(query, [
       user_id,
       session_id,
+      project,
       sender_type,
       message,
       meta ? JSON.stringify(meta) : null,

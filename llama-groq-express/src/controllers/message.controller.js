@@ -10,7 +10,7 @@ import { messageModel } from '../models/message.model.js'
  */
 export const createMessage = async (req, res) => {
   try {
-    const { session_id, sender_type, message, meta } = req.body
+    const { session_id, sender_type, message, meta, project } = req.body
     const user_id = req.user?.id || req.user?.user_id
 
     if (!user_id) {
@@ -40,6 +40,7 @@ export const createMessage = async (req, res) => {
       sender_type,
       message,
       meta,
+      project: project || null,
     })
 
     res.status(201).json({

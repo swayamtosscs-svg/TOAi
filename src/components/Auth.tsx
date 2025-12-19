@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { loginUser, registerUser } from '../api'
+import { signInWithPopup } from 'firebase/auth'
+import { auth, googleProvider } from '../firebase'
+import { loginUser, registerUser, loginWithGoogle } from '../api'
 
 interface AuthProps {
   onAuthenticated: () => void
@@ -13,6 +15,48 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+
+  const handleGoogleSignIn = async () => {
+    setError(null)
+    setIsGoogleLoading(true)
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider)
+      const user = result.user
+      
+      if (!user.email) {
+        throw new Error('Google account does not have an email address')
+      }
+
+      // Get the Firebase ID token
+      const idToken = await user.getIdToken()
+
+      // Persist basic profile info for header avatar
+      try {
+        const displayName = user.displayName || user.email.split('@')[0]
+        const photoUrl = user.photoURL || ''
+        localStorage.setItem('userName', displayName)
+        localStorage.setItem('userPhoto', photoUrl)
+        localStorage.setItem('loginMethod', 'google')
+        localStorage.setItem('userEmail', user.email)
+      } catch {
+        // Ignore localStorage errors (e.g., in private mode)
+      }
+
+      // Send to backend for verification and user creation/login
+      await loginWithGoogle(idToken, user.displayName || user.email.split('@')[0], user.email)
+      
+      setIsGoogleLoading(false)
+      onAuthenticated()
+    } catch (err) {
+      console.error('Google sign-in error:', err)
+      const message =
+        err instanceof Error ? err.message : 'Google sign-in failed. Please try again.'
+      setError(message)
+      setIsGoogleLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,6 +85,20 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
         await loginUser(email.trim(), password.trim())
       } else {
         await registerUser(name.trim(), email.trim(), password.trim())
+      }
+
+      // Clear any social avatar info for email/password login
+      try {
+        localStorage.setItem('loginMethod', 'email')
+        localStorage.setItem('userEmail', email.trim())
+        if (mode === 'signup' && name.trim()) {
+          localStorage.setItem('userName', name.trim())
+        } else if (!localStorage.getItem('userName')) {
+          localStorage.setItem('userName', email.trim().split('@')[0])
+        }
+        localStorage.removeItem('userPhoto')
+      } catch {
+        // Ignore localStorage errors
       }
 
       setIsSubmitting(false)
@@ -102,16 +160,17 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
             </button>
           </div>
 
-          {/* Social login - logos only, compact */}
+          {/* Google Social Login - Prominent Button */}
           <div className="mb-4">
-            <div className="flex items-center justify-center gap-4">
-              {/* Google */}
-              <button
-                type="button"
-                onClick={() => onAuthenticated()}
-                className="flex items-center justify-center h-10 w-10 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-500 transition-all"
-                title="Continue with Google"
-              >
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isGoogleLoading || isSubmitting}
+              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium text-sm shadow-sm hover:shadow-md hover:border-slate-400 dark:hover:border-slate-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGoogleLoading ? (
+                <span className="inline-block w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
                 <svg
                   className="h-5 w-5"
                   viewBox="0 0 48 48"
@@ -122,47 +181,9 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
                   <path fill="#34A853" d="M24 46.5c6.3 0 11.6-2.08 15.47-5.68l-7.27-5.63C30.4 36.85 27.5 37.9 24 37.9c-6.26 0-11.56-4.33-13.5-10.26l-6.76 5.24C7.16 40.42 14.82 46.5 24 46.5z" />
                   <path fill="none" d="M1.5 1.5h45v45h-45z" />
                 </svg>
-              </button>
-
-              {/* LinkedIn */}
-              <button
-                type="button"
-                onClick={() => onAuthenticated()}
-                className="flex items-center justify-center h-10 w-10 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-500 transition-all"
-                title="Continue with LinkedIn"
-              >
-                <svg
-                  className="h-4 w-4"
-                  viewBox="0 0 34 34"
-                >
-                  <rect width="34" height="34" rx="4" fill="#0A66C2" />
-                  <path
-                    d="M10.07 25.5H6.41V13.49h3.66V25.5zM8.24 11.81C7.06 11.81 6 10.76 6 9.58 6 8.4 7.06 7.34 8.24 7.34c1.17 0 2.24 1.06 2.24 2.24 0 1.18-1.07 2.23-2.24 2.23zM28 25.5h-3.65v-5.9c0-1.41-.03-3.22-1.96-3.22-1.96 0-2.26 1.53-2.26 3.12v6h-3.65V13.49h3.5v1.64h.05c.49-.93 1.68-1.9 3.46-1.9 3.71 0 4.4 2.44 4.4 5.61V25.5z"
-                    fill="#fff"
-                  />
-                </svg>
-              </button>
-
-              {/* GitHub */}
-              <button
-                type="button"
-                onClick={() => onAuthenticated()}
-                className="flex items-center justify-center h-10 w-10 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-500 transition-all"
-                title="Continue with GitHub"
-              >
-                <svg
-                  className="h-5 w-5 text-slate-900 dark:text-slate-100"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M12 .5C5.648.5.5 5.648.5 12c0 5.088 3.292 9.387 7.868 10.907.575.106.785-.25.785-.556 0-.274-.01-1.003-.016-1.97-3.2.695-3.875-1.542-3.875-1.542-.523-1.33-1.278-1.684-1.278-1.684-1.044-.714.079-.699.079-.699 1.155.081 1.763 1.186 1.763 1.186 1.027 1.76 2.694 1.252 3.35.958.104-.744.402-1.253.73-1.54-2.553-.29-5.236-1.277-5.236-5.683 0-1.255.448-2.281 1.183-3.085-.119-.289-.513-1.453.113-3.03 0 0 .965-.309 3.163 1.178a10.95 10.95 0 0 1 2.88-.387c.976.005 1.96.132 2.879.387 2.199-1.487 3.162-1.178 3.162-1.178.627 1.577.233 2.741.114 3.03.737.804 1.182 1.83 1.182 3.085 0 4.418-2.688 5.389-5.252 5.673.414.357.783 1.065.783 2.147 0 1.551-.014 2.8-.014 3.181 0 .309.207.668.79.555C20.21 21.382 23.5 17.085 23.5 12c0-6.352-5.148-11.5-11.5-11.5Z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
+              )}
+              <span>{isGoogleLoading ? 'Signing in with Google...' : 'Continue with Google'}</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2 my-3">
